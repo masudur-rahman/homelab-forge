@@ -1,0 +1,5 @@
+.ansible
+collections/ansible_collections
+files/wireguard
+.idea
+.qodo

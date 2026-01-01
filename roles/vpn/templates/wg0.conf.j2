@@ -1,0 +1,13 @@
+[Interface]
+Address = {{ vpn_wireguard_interface_ip }}/24
+ListenPort = {{ vpn_wireguard_port | default('51820') }}
+PrivateKey = {{ lookup('file', vpn_wireguard_key_path + '/server.key') }}
+
+PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o $(ip route | grep default | awk '{print $5}' | head -1) -j MASQUERADE
+PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o $(ip route | grep default | awk '{print $5}' | head -1) -j MASQUERADE
+
+{% for client in vpn_wireguard_clients %}
+[Peer]
+PublicKey = {{ lookup('file', vpn_wireguard_key_path + '/' + client.name + '.pub') }}
+AllowedIPs = {{ client.ip }}/32
+{% endfor %}

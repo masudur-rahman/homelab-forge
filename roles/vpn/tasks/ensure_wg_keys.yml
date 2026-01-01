@@ -1,0 +1,67 @@
+---
+- name: Check if server keys exist locally
+  stat:
+    path: "{{ vpn_wireguard_key_path }}/server.key"
+  register: local_server_key
+  delegate_to: localhost
+  become: no
+
+- block:
+    - name: Install WireGuard Tools
+      apt:
+        name: wireguard-tools
+        state: present
+
+    # Generate Server Keys
+    - name: Generate Server Private Key
+      shell: wg genkey
+      register: factory_server_private
+
+    - name: Derive Server Public Key
+      shell: echo "{{ factory_server_private.stdout }}" | wg pubkey
+      register: factory_server_public
+
+    # Generate Client Keys
+    - name: Generate Client Keys
+      shell: |
+        PRIV=$(wg genkey)
+        PUB=$(echo "$PRIV" | wg pubkey)
+        echo "{\"name\": \"{{ item.name }}\", \"private\": \"$PRIV\", \"public\": \"$PUB\"}"
+      loop: "{{ vpn_wireguard_clients }}"
+      register: factory_client_keys
+
+    # Save to Localhost
+    - name: Create local key storage
+      file:
+        path: "{{ vpn_wireguard_key_path }}"
+        state: directory
+        mode: '0700'
+      delegate_to: localhost
+      become: no
+
+    - name: Save Server Keys Locally
+      copy:
+        content: "{{ item.content }}"
+        dest: "{{ vpn_wireguard_key_path }}/{{ item.file }}"
+        mode: '0600'
+      loop:
+        - { file: 'server.key', content: "{{ factory_server_private.stdout }}" }
+        - { file: 'server.pub', content: "{{ factory_server_public.stdout }}" }
+      delegate_to: localhost
+      become: no
+
+    - name: Save Client Keys Locally
+      copy:
+        content: "{{ item.0.stdout | from_json | json_query(query_key) }}"
+        dest: "{{ vpn_wireguard_key_path }}/{{ item.0.stdout | from_json | json_query('name') }}.{{ ext }}"
+        mode: '0600'
+      loop: "{{ factory_client_keys.results | product(['key', 'pub']) | list }}"
+      vars:
+        ext: "{{ item.1 }}"
+        query_key: "{{ 'private' if item.1 == 'key' else 'public' }}"
+      when: item.0.stdout is defined
+      delegate_to: localhost
+      become: no
+
+  when: not local_server_key.stat.exists
+  run_once: true

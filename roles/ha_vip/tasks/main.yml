@@ -1,0 +1,32 @@
+---
+- name: Install Keepalived
+  apt:
+    name: keepalived
+    state: present
+
+- name: Enable Non-Local Bind
+  sysctl:
+    name: net.ipv4.ip_nonlocal_bind
+    value: '1'
+    sysctl_set: yes
+    state: present
+
+- name: Create Checks Directory
+  file:
+    path: /etc/keepalived/checks.d
+    state: directory
+    mode: '0755'
+
+# 🔍 DYNAMIC DISCOVERY: Find whatever scripts other roles left here
+- name: Discover Health Check Scripts
+  find:
+    paths: /etc/keepalived/checks.d
+    patterns: "*.sh"
+    file_type: file
+  register: discovered_checks
+
+- name: Deploy Dynamic HA Config
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+  notify: Restart Keepalived

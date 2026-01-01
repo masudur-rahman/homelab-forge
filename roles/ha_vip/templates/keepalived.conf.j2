@@ -1,0 +1,38 @@
+global_defs {
+    # 🛡️ Run scripts as root (Required for 'wg show' and 'ip link')
+    script_user root
+    enable_script_security
+}
+
+{% for check in discovered_checks.files %}
+vrrp_script {{ check.path | basename | regex_replace('\.sh$', '') }} {
+    script "{{ check.path }}"
+    interval 2
+    weight -20  # Decrease priority if this specific script fails
+    fall 2
+    rise 2
+}
+{% endfor %}
+
+vrrp_instance {{ ha_instance_name | default('VI_1') }} {
+    state {{ 'MASTER' if inventory_hostname == play_hosts[0] else 'BACKUP' }}
+    interface {{ ha_interface | default('eth0') }}
+    virtual_router_id {{ ha_router_id | default(51) }}
+    priority {{ 100 - play_hosts.index(inventory_hostname) }}
+    advert_int 1
+
+    authentication {
+        auth_type PASS
+        auth_pass {{ ha_auth_pass }}
+    }
+
+    virtual_ipaddress {
+        {{ ha_vip }}
+    }
+
+    track_script {
+{% for check in discovered_checks.files %}
+        {{ check.path | basename | regex_replace('\.sh$', '') }}
+{% endfor %}
+    }
+}

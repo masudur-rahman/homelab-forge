@@ -1,0 +1,20 @@
+---
+current_directory: "{{ lookup('env', 'PWD') }}"
+
+# --- VPN Config ---
+vpn_wireguard_setup: true
+vpn_wireguard_endpoint: 103.49.169.50
+vpn_wireguard_key_path: "{{ current_directory }}/files/wireguard"
+vpn_wireguard_interface_ip: "10.8.0.1"
+vpn_wireguard_port: 51820
+
+vpn_wireguard_ha_vip: "10.66.0.4"
+vpn_wireguard_ha_auth_pass: "wireguard_secret_pass"
+vpn_wireguard_ha_router_id: 50
+vpn_wireguard_ha_instance_name: "VPN_HA"
+
+vpn_wireguard_clients:
+- name: masud-android
+  ip: "10.8.0.2"
+- name: masud-macbook
+  ip: "10.8.0.3"
