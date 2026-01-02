@@ -1,25 +1,25 @@
 ---
 - name: Update apt cache and upgrade packages
-  apt:
-    update_cache: yes
+  ansible.builtin.apt:
+    update_cache: true
     upgrade: dist
     cache_valid_time: 3600
 
 - name: Install essential system tools
-  apt:
+  ansible.builtin.apt:
     name:
-    - curl
-    - git
-    - vim
-    - fish
-    - tmux
-    - htop
-    - net-tools
-    - tree
-    - iptables
-    - ca-certificates
-    - gnupg
-    - qrencode
+      - curl
+      - git
+      - vim
+      - fish
+      - tmux
+      - htop
+      - net-tools
+      - tree
+      - iptables
+      - ca-certificates
+      - gnupg
+      - qrencode
     state: present
 
 # --- Docker Setup ---
@@ -47,11 +47,11 @@
     creates: /etc/apt/sources.list.d/docker.list
 
 - name: Update apt cache (again) to see Docker repo
-  apt:
+  ansible.builtin.apt:
     update_cache: yes
 
 - name: Install Docker and Compose Plugin
-  apt:
+  ansible.builtin.apt:
     name:
     - docker-ce
     - docker-ce-cli

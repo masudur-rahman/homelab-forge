@@ -1,42 +1,68 @@
 # 🛠️ Project Forge Makefile
-# Default to 'infra' to prevent accidental compute runs
+
+# Default Environment
 ENV ?= infra
 
-# Paths
-INVENTORY_SCRIPT := ./scripts/inventory_gen.sh
-INVENTORY_FILE 	 := inventories/$(ENV)/hosts.ini
-PLAYBOOK         := playbooks/layer-$(ENV).yml
+# --- CONSTANTS ---
+INVENTORY_FILE := inventories/$(ENV)/hosts.ini
+ANSIBLE_FLAGS  := -i $(INVENTORY_FILE) -e @group_vars/$(ENV).yml
 
-.PHONY: init inventory check ping config
+ifdef tags
+	ANSIBLE_FLAGS += --tags $(tags)
+endif
 
-# 📦 Install Dependencies
-init:
-	@echo "📦 Installing Ansible Galaxy collections..."
-	ansible-galaxy install -r collections/requirements.yml --force 2>/dev/null || echo "No requirements.yml found, skipping."
+# --- SSH ARGUMENT HACK ---
+# This allows "make ssh gateway-01" by turning the argument into a dummy target
+ifeq (ssh,$(firstword $(MAKECMDGOALS)))
+  SSH_HOST := $(word 2, $(MAKECMDGOALS))
+  # Prevent Make from complaining that "gateway-01" is not a target
+  $(eval $(SSH_HOST):;@:)
+endif
 
-# 🌉 Generate Inventory (The Bridge)
-inventory:
-	@echo "🌉 Generating inventory for [$(ENV)]..."
-	@chmod +x $(INVENTORY_SCRIPT)
-	$(INVENTORY_SCRIPT) $(ENV)
+.PHONY: help init inventory vpn configure_host ping check lint ssh
 
-# 📡 Connectivity Check
-ping:
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+# --- SETUP ---
+
+init: ## Install Galaxy collections
+	@echo "📦 Installing Dependencies..."
+	ansible-galaxy install -r collections/requirements.yml --force 2>/dev/null || true
+
+inventory: ## Generate dynamic inventory
+	@./scripts/render_inventory.sh $(ENV)
+
+# --- OPERATIONAL TASKS ---
+
+configure_host: ## Configure base system (User, SSH, etc)
+	@echo "⚙️  Configuring Hosts for [$(ENV)]..."
+	ansible-playbook playbooks/configure_host.yml $(ANSIBLE_FLAGS)
+
+vpn: ## Deploy VPN Service (Includes Floating IP)
+	@echo "🛡️  Deploying VPN Service for [$(ENV)]..."
+	ansible-playbook playbooks/vpn.yml $(ANSIBLE_FLAGS)
+
+ping: ## Connectivity Check (Works for Talos/No-Python)
 	@echo "📡 Pinging [$(ENV)] hosts..."
-	ansible -i $(INVENTORY_FILE) all -m ping
+	ansible-playbook playbooks/ping.yml $(ANSIBLE_FLAGS)
 
-# 🚀 Run the Playbook
-config:
-	@echo "🚀 Configuring [$(ENV)] layer..."
-	ansible-playbook -i $(INVENTORY_FILE) $(PLAYBOOK)
+ifeq (ssh,$(firstword $(MAKECMDGOALS)))
+  SSH_SEARCH_TERM := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(SSH_SEARCH_TERM):;@:)
+endif
 
-# 🔍 Syntax Check (Dry Run)
-check:
-	@echo "🔍 Checking playbook syntax for [$(ENV)]..."
-	ansible-playbook -i $(INVENTORY_FILE) $(PLAYBOOK) --syntax-check
-	ansible-playbook -i $(INVENTORY_FILE) $(PLAYBOOK) --check --diff
+ssh: ## SSH into a host (Usage: make ssh gateway-01)
+	@ENV="$(ENV)" SEARCH_QUERY="$(SSH_SEARCH_TERM)" ./scripts/ssh_connect.sh $(ANSIBLE_FLAGS)
 
-# 🧹 Linting
-lint:
-	@echo "🧹 Linting YAML files..."
-	ansible-lint playbooks/*.yml roles/*
+# --- CI / QA ---
+
+check: ## Dry-run to see pending changes
+	@echo "🔍 Dry-Run Check for [$(ENV)]..."
+	ansible-playbook playbooks/vpn.yml $(ANSIBLE_FLAGS) --syntax-check
+	ansible-playbook playbooks/vpn.yml $(ANSIBLE_FLAGS) --check --diff
+
+lint: ## Lint YAML files (Excludes collections to prevent hanging)
+	@echo "🧹 Linting..."
+	# 🟢 Exclude massive collection folders to fix hanging
+	ansible-lint playbooks/*.yml roles/* --exclude collections --exclude .collection

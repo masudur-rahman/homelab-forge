@@ -1,0 +1,6 @@
+---
+- name: Configure Infra Layer Base
+  hosts: all
+  become: true
+  roles:
+   - configure_host

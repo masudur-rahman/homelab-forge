@@ -3,15 +3,15 @@
   hosts: all
   become: true
   roles:
-    - common
-    - ssh
+    - configure_host
+    # - ssh
 
-- name: Talos nodes
-  hosts: talos
-  roles:
-    - talos_node
+# - name: Talos nodes
+#   hosts: talos
+#   roles:
+#     - talos_node
 
-- name: Flatcar nodes
-  hosts: flatcar
-  roles:
-    - flatcar_node
+# - name: Flatcar nodes
+#   hosts: flatcar
+#   roles:
+#     - flatcar_node

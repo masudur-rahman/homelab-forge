@@ -2,3 +2,11 @@
 ntp_servers:
   - time.google.com
   - pool.ntp.org
+
+timezone: UTC
+container_runtime: docker
+dns_servers:
+  - 1.1.1.1
+  - 8.8.8.8
+
+floating_ip_interface: eth0

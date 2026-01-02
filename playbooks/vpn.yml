@@ -1,0 +1,17 @@
+---
+- name: Configure VPN Service
+  hosts: gateway
+  become: true
+  roles:
+    - role: vpn
+      tags:
+        - vpn
+
+    - role: floating_ip
+      vars:
+        floating_ip: "{{ vpn_wireguard_floating_ip }}"
+        floating_ip_auth_pass: "{{ vpn_wireguard_floating_ip_auth_pass }}"
+        floating_ip_router_id: "{{ vpn_wireguard_floating_ip_router_id }}"
+        floating_ip_instance_name: "{{ vpn_wireguard_floating_ip_instance_name }}"
+      tags:
+        - floating_ip

@@ -14,20 +14,20 @@ vrrp_script {{ check.path | basename | regex_replace('\.sh$', '') }} {
 }
 {% endfor %}
 
-vrrp_instance {{ ha_instance_name | default('VI_1') }} {
+vrrp_instance {{ floating_ip_instance_name | default('VI_1') }} {
     state {{ 'MASTER' if inventory_hostname == play_hosts[0] else 'BACKUP' }}
     interface {{ ha_interface | default('eth0') }}
-    virtual_router_id {{ ha_router_id | default(51) }}
+    virtual_router_id {{ floating_ip_router_id | default(51) }}
     priority {{ 100 - play_hosts.index(inventory_hostname) }}
     advert_int 1
 
     authentication {
         auth_type PASS
-        auth_pass {{ ha_auth_pass }}
+        auth_pass {{ floating_ip_auth_pass }}
     }
 
     virtual_ipaddress {
-        {{ ha_vip }}
+        {{ floating_ip }}
     }
 
     track_script {
