@@ -1,0 +1,54 @@
+services:
+  app:
+    image: ghcr.io/masudur-rahman/expense-tracker-bot:{{ expense_bot_version }}
+    container_name: expense-tracker
+    command: serve
+    depends_on:
+      - db
+      - redis
+    environment:
+      - TELEGRAM_BOT_TOKEN={{ expense_bot_token }}
+      - OPENROUTER_API_KEY={{ expense_bot_openrouter_key }}
+    volumes:
+      - ./config.yaml:/configs/.expense-tracker.yaml
+      - ./app_data:/.expense-tracker
+    restart: unless-stopped
+    networks:
+      - expense_net
+
+  db:
+    image: postgres:15-alpine
+    container_name: expense-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: {{ expense_db_user }}
+      POSTGRES_PASSWORD: {{ expense_db_pass }}
+      POSTGRES_DB: {{ expense_db_name }}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{ expense_db_user }}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - expense_net
+
+  redis:
+    image: redis:alpine
+    container_name: expense-redis
+    restart: always
+    command: redis-server --requirepass {{ expense_redis_pass }}
+    networks:
+      - expense_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "{{ expense_redis_pass }}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  expense_net:

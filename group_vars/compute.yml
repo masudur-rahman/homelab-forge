@@ -1,0 +1,15 @@
+# Expense Tracker Bot Config
+expense_bot_version: "v1.3.0-rc.2"
+expense_bot_token: "6411966391:AAEdr7FoasT11TTgaJ_albzjJP-VkLkxSRE"
+expense_bot_openrouter_key: "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"
+expense_bot_user: "masudur_rahman"
+
+# Database Config
+expense_db_user: "postgres"
+expense_db_pass: "postgres"
+expense_db_name: "expense"
+
+# Redis / Cache Config
+expense_cache_type: "redis" # Options: redis, map
+expense_redis_pass: "redis"
+expense_redis_port: "6379"

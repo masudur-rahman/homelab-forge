@@ -1,0 +1,7 @@
+---
+- name: Deploy Compute Services
+  hosts: expense-tracker
+  become: true
+  roles:
+    - role: expense_tracker
+      tags: expense

@@ -8,6 +8,7 @@
 - name: Install essential system tools
   ansible.builtin.apt:
     name:
+      - build-essential
       - curl
       - git
       - vim

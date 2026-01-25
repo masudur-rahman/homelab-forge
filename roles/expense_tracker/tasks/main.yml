@@ -1,0 +1,34 @@
+---
+- name: Ensure Project Directory Exists
+  file:
+    path: /opt/expense-tracker
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: Create App Data Directory
+  file:
+    path: /opt/expense-tracker/app_data
+    state: directory
+    mode: '0755'
+
+- name: Deploy App Configuration
+  template:
+    src: config.yaml.j2
+    dest: /opt/expense-tracker/config.yaml
+    mode: '0644'
+  notify: Restart Expense Tracker
+
+- name: Deploy Docker Compose File
+  template:
+    src: docker-compose.yml.j2
+    dest: /opt/expense-tracker/docker-compose.yml
+    mode: '0644'
+  notify: Restart Expense Tracker
+
+- name: Start Expense Tracker Stack
+  community.docker.docker_compose_v2:
+    project_src: /opt/expense-tracker
+    state: present
+    pull: always

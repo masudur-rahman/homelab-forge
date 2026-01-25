@@ -11,6 +11,10 @@ ifdef tags
 	ANSIBLE_FLAGS += --tags $(tags)
 endif
 
+ifdef limit
+	ANSIBLE_FLAGS += --limit "$(limit)"
+endif
+
 # --- SSH ARGUMENT HACK ---
 # This allows "make ssh gateway-01" by turning the argument into a dummy target
 ifeq (ssh,$(firstword $(MAKECMDGOALS)))
@@ -19,7 +23,7 @@ ifeq (ssh,$(firstword $(MAKECMDGOALS)))
   $(eval $(SSH_HOST):;@:)
 endif
 
-.PHONY: help init inventory vpn configure_host ping check lint ssh
+.PHONY: help init inventory vpn configure_host expense_tracker ping check lint ssh
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -42,6 +46,10 @@ configure_host: ## Configure base system (User, SSH, etc)
 vpn: ## Deploy VPN Service (Includes Floating IP)
 	@echo "🛡️  Deploying VPN Service for [$(ENV)]..."
 	ansible-playbook playbooks/vpn.yml $(ANSIBLE_FLAGS)
+
+expense_tracker: ## Deploy Expense Tracker Bot
+	@echo "🤖 Deploying Expense Tracker to [$(ENV)]..."
+	ansible-playbook playbooks/expense_tracker.yml $(ANSIBLE_FLAGS)
 
 ping: ## Connectivity Check (Works for Talos/No-Python)
 	@echo "📡 Pinging [$(ENV)] hosts..."

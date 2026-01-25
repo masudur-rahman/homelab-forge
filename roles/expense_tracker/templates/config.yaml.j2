@@ -1,0 +1,19 @@
+telegram:
+  user: {{ expense_bot_user }}
+
+database:
+  type: postgres
+  postgres:
+    name: {{ expense_db_name }}
+    host: db
+    port: 5432
+    user: {{ expense_db_user }}
+    password: {{ expense_db_pass }}
+    sslmode: disable
+
+cache:
+  type: {{ expense_cache_type }}
+  redis:
+    host: redis
+    port: "{{ expense_redis_port }}"
+    password: {{ expense_redis_pass }}
