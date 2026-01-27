@@ -43,9 +43,9 @@ configure_host: ## Configure base system (User, SSH, etc)
 	@echo "⚙️  Configuring Hosts for [$(ENV)]..."
 	ansible-playbook playbooks/configure_host.yml $(ANSIBLE_FLAGS)
 
-vpn: ## Deploy VPN Service (Includes Floating IP)
-	@echo "🛡️  Deploying VPN Service for [$(ENV)]..."
-	ansible-playbook playbooks/vpn.yml $(ANSIBLE_FLAGS)
+gateway: ## Deploy Gateway Stack (VPN + DNS + HA)
+	@echo "🛡️  Deploying Gateway Services to [$(ENV)]..."
+	ansible-playbook playbooks/gateway.yml $(ANSIBLE_FLAGS)
 
 expense_tracker: ## Deploy Expense Tracker Bot
 	@echo "🤖 Deploying Expense Tracker to [$(ENV)]..."

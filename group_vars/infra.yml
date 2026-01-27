@@ -8,13 +8,22 @@ vpn_wireguard_key_path: "{{ current_directory }}/files/wireguard"
 vpn_wireguard_interface_ip: "10.8.0.1"
 vpn_wireguard_port: 51820
 
-vpn_wireguard_floating_ip: "10.66.0.4"
-vpn_wireguard_floating_ip_auth_pass: "wireguard_secret_pass"
-vpn_wireguard_floating_ip_router_id: 50
-vpn_wireguard_floating_ip_instance_name: "VPN_HA"
+gateway_floating_ip: "10.66.0.253"
+gateway_floating_ip_router_id: 50
+gateway_floating_ip_auth_pass: "GateHA"
+gateway_floating_ip_instance_name: "GATEWAY"
 
 vpn_wireguard_clients:
 - name: masud-android
   ip: "10.8.0.2"
 - name: masud-macbook
   ip: "10.8.0.3"
+
+# --- AdGuard Home ---
+adguard_version: "v0.107.71"
+adguard_bind_ip: "0.0.0.0"
+adguard_port_web: 3000
+adguard_port_dns: 53
+adguard_upstreams:
+  - "1.1.1.1"
+  - "8.8.8.8"

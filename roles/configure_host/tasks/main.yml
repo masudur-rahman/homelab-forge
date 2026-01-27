@@ -16,6 +16,7 @@
       - tmux
       - htop
       - net-tools
+      - dnsutils
       - tree
       - iptables
       - ca-certificates

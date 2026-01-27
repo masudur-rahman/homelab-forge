@@ -1,0 +1,14 @@
+bind_host: {{ adguard_bind_ip }}
+bind_port: {{ adguard_port_web }}
+dns:
+  bind_hosts:
+    - {{ adguard_bind_ip }}
+  port: {{ adguard_port_dns }}
+  upstream_dns:
+{% for server in adguard_upstreams %}
+    - {{ server }}
+{% endfor %}
+  protection_enabled: true
+  blocking_mode: default
+  # Allow requests from everywhere (VIP, VPN, LAN)
+  allowed_clients: []

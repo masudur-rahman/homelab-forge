@@ -1,0 +1,128 @@
+---
+- name: Check current DNS connectivity
+  command: host google.com
+  register: dns_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Check if systemd-resolved is causing a conflict
+  command: systemctl is-active systemd-resolved
+  register: resolved_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Bootstrap DNS & Free Port 53
+  block:
+    - name: Stop systemd-resolved
+      service:
+        name: systemd-resolved
+        state: stopped
+        enabled: no
+
+    - name: Remove broken resolv.conf symlink
+      file:
+        path: /etc/resolv.conf
+        state: absent
+
+    - name: Set temporary bootstrap DNS (1.1.1.1)
+      copy:
+        dest: /etc/resolv.conf
+        content: "nameserver 1.1.1.1"
+  when: dns_check.rc != 0 or resolved_check.rc == 0
+
+- name: Check installed AdGuard version
+  command: /opt/adguard/AdGuardHome --version
+  register: installed_version
+  ignore_errors: yes
+  changed_when: false
+  failed_when: false
+
+- name: Determine if install/upgrade is needed
+  set_fact:
+    needs_install: >-
+      {{ installed_version.rc != 0 or 
+         adguard_version not in installed_version.stdout }}
+
+- name: Installation Block
+  block:
+    - name: Create AdGuard Directory
+      file:
+        path: /opt/adguard
+        state: directory
+        mode: '0755'
+
+    - name: Create Temp Install Dir
+      file:
+        path: /tmp/adguard_install
+        state: directory
+
+    - name: Download AdGuard Release
+      unarchive:
+        src: "https://github.com/AdguardTeam/AdGuardHome/releases/download/{{ adguard_version }}/AdGuardHome_linux_amd64.tar.gz"
+        dest: /tmp/adguard_install
+        remote_src: yes
+
+    - name: Install/Upgrade Binary
+      copy:
+        src: /tmp/adguard_install/AdGuardHome/AdGuardHome
+        dest: /opt/adguard/AdGuardHome
+        mode: '0755'
+        remote_src: yes
+      notify: Restart AdGuard
+
+    - name: Cleanup Temp Files
+      file:
+        path: /tmp/adguard_install
+        state: absent
+  when: needs_install
+
+- name: Deploy AdGuard Config
+  template:
+    src: AdGuardHome.yaml.j2
+    dest: /opt/adguard/AdGuardHome.yaml
+    mode: '0644'
+    force: no
+  notify: Restart AdGuard
+
+- name: Install Systemd Service
+  copy:
+    dest: /etc/systemd/system/adguard.service
+    content: |
+      [Unit]
+      Description=AdGuard Home
+      After=network.target
+      [Service]
+      ExecStart=/opt/adguard/AdGuardHome -c /opt/adguard/AdGuardHome.yaml -w /opt/adguard
+      Restart=always
+      WorkingDirectory=/opt/adguard
+      [Install]
+      WantedBy=multi-user.target
+  notify: Restart AdGuard
+
+- name: Start AdGuard
+  service:
+    name: adguard
+    state: started
+    enabled: yes
+
+- name: Register AdGuard Health Check
+  copy:
+    dest: /etc/keepalived/checks.d/adguard.sh
+    mode: '0755'
+    content: |
+      #!/bin/bash
+      if host google.com 127.0.0.1 > /dev/null 2>&1; then
+          exit 0
+      else
+          exit 1
+      fi
+
+- name: Configure Production resolv.conf
+  copy:
+    dest: /etc/resolv.conf
+    content: |
+      # Ansible Managed: Production DNS Configuration
+      nameserver 127.0.0.1
+      nameserver 1.1.1.1
+      search mrahman.xyz
+    mode: '0644'

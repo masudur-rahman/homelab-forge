@@ -1,0 +1,20 @@
+---
+- name: Configure VPN Service
+  hosts: gateway
+  become: true
+  roles:
+    - role: vpn
+      tags:
+        - vpn
+    - role: adguard
+      tags:
+        - dns
+
+    - role: floating_ip
+      vars:
+        floating_ip: "{{ gateway_floating_ip }}"
+        floating_ip_router_id: "{{ gateway_floating_ip_router_id }}"
+        floating_ip_auth_pass: "{{ gateway_floating_ip_auth_pass }}"
+        floating_ip_instance_name: "{{ gateway_floating_ip_instance_name }}"
+      tags:
+        - floating_ip
