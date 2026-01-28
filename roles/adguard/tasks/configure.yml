@@ -1,0 +1,39 @@
+---
+- name: Deploy AdGuard Config
+  template:
+    src: AdGuardHome.yaml.j2
+    dest: /opt/adguard/AdGuardHome.yaml
+    mode: '0644'
+    force: no
+  notify: Restart AdGuard
+
+- name: Install Systemd Service
+  copy:
+    dest: /etc/systemd/system/adguard.service
+    content: |
+      [Unit]
+      Description=AdGuard Home
+      After=network.target
+      [Service]
+      ExecStart=/opt/adguard/AdGuardHome -c /opt/adguard/AdGuardHome.yaml -w /opt/adguard
+      Restart=always
+      WorkingDirectory=/opt/adguard
+      [Install]
+      WantedBy=multi-user.target
+  notify: Restart AdGuard
+
+- name: Start AdGuard
+  service:
+    name: adguard
+    state: started
+    enabled: yes
+
+- name: Configure Production resolv.conf
+  copy:
+    dest: /etc/resolv.conf
+    content: |
+      # Ansible Managed: Production DNS Configuration
+      nameserver 127.0.0.1
+      nameserver {{ fallback_dns | default('1.1.1.1') }}
+      search {{ search_domain }}
+    mode: '0644'

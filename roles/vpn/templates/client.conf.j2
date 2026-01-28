@@ -1,10 +1,10 @@
 [Interface]
 PrivateKey = {{ lookup('file', vpn_wireguard_key_path + '/' + client.name + '.key') }}
 Address = {{ client.ip }}/32
-DNS = 10.66.0.253
+DNS = {{ primary_dns }}
 
 [Peer]
 PublicKey = {{ lookup('file', vpn_wireguard_key_path + '/server.pub') }}
-Endpoint = {{ vpn_wireguard_endpoint | default(vpn_wireguard_ha_vip) | default(ansible_host) }}:{{ vpn_wireguard_port }}
+Endpoint = {{ vpn_wireguard_endpoint | default(gateway_floating_ip) | default(ansible_host) }}:{{ vpn_wireguard_port }}
 AllowedIPs = 0.0.0.0/0, ::/0
 PersistentKeepalive = 25
