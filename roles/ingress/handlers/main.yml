@@ -1,0 +1,8 @@
+---
+- name: Reload Nginx
+  service:
+    name: nginx
+    state: reloaded
+
+- name: Run SSL Fetcher
+  command: "/usr/bin/python3 /usr/local/bin/fetch_ssl_{{ ingress_root_domain }}.py"

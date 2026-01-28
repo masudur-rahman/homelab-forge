@@ -1,0 +1,20 @@
+---
+- name: Ensure Nginx Configuration Directory Exists
+  file:
+    path: /etc/nginx/conf.d
+    state: directory
+    mode: '0755'
+
+- name: Upload Domain Configurations
+  template:
+    src: domain.conf.j2
+    dest: "/etc/nginx/conf.d/{{ server.domain }}.conf"
+    mode: '0644'
+  loop: "{{ ingress_sites }}"
+  loop_control:
+    loop_var: server
+  notify: Reload Nginx
+
+- name: Validate Nginx Configuration
+  command: nginx -t
+  changed_when: false

@@ -17,6 +17,8 @@
       - htop
       - net-tools
       - dnsutils
+      - python3-requests
+      - cron
       - tree
       - iptables
       - ca-certificates

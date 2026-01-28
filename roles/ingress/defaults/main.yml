@@ -1,0 +1,10 @@
+---
+ingress_root_domain: "mrahman.xyz"
+ingress_cert_email: "masudjuly02@gmail.com"
+ingress_sites: []
+# - domain: "app.example.com"
+#   upstream: "http://10.0.0.5:8080"
+#   websocket: false
+
+# porkbun_api_key: ""
+# porkbun_secret_key: ""

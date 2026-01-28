@@ -47,6 +47,10 @@ gateway: ## Deploy Gateway Stack (VPN + DNS + HA)
 	@echo "🛡️  Deploying Gateway Services to [$(ENV)]..."
 	ansible-playbook playbooks/gateway.yml $(ANSIBLE_FLAGS)
 
+ingress: ## Setup Ingress Proxy (Nginx + SSL)
+	@echo "🚦 Deploying Ingress Controller..."
+	ansible-playbook playbooks/ingress.yml $(ANSIBLE_FLAGS)
+
 expense_tracker: ## Deploy Expense Tracker Bot
 	@echo "🤖 Deploying Expense Tracker to [$(ENV)]..."
 	ansible-playbook playbooks/expense_tracker.yml $(ANSIBLE_FLAGS)

@@ -1,0 +1,7 @@
+---
+- name: Setup Ingress (Nginx Reverse) Proxy
+  hosts: portal
+  become: true
+  roles:
+    - role: ingress
+      tags: ingress

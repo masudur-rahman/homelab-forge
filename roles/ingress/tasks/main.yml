@@ -1,0 +1,12 @@
+---
+- name: Install Nginx Service
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+
+- name: Setup SSL Fetcher (Porkbun)
+  include_tasks: ssl_fetcher.yml
+
+- name: Configure Nginx Reverse Proxy
+  include_tasks: nginx.yml

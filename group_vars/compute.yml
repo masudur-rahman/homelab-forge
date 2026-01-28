@@ -1,3 +1,17 @@
+# Ingress (Nginx Reverse Proxy)
+ingress_root_domain: "mrahman.xyz"
+ingress_cert_email: "masudjuly02@gmail.com"
+ingress_sites:
+- domain: "proxmox.mrahman.xyz"
+  upstream: "https://10.66.0.10:8006"
+  websocket: true
+- domain: "adguard.mrahman.xyz"
+  upstream: "http://10.66.0.253:3000"
+  websocket: false
+
+porkbun_api_key: "porkbun-api-key"
+porkbun_secret_key: "porkbun-secret-key"
+
 # Expense Tracker Bot Config
 expense_bot_version: "v1.3.0-rc.2"
 expense_bot_token: "6411966391:AAEdr7FoasT11TTgaJ_albzjJP-VkLkxSRE"
