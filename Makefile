@@ -5,7 +5,7 @@ ENV ?= infra
 
 # --- CONSTANTS ---
 INVENTORY_FILE := inventories/$(ENV)/hosts.ini
-ANSIBLE_FLAGS  := -i $(INVENTORY_FILE) -e @group_vars/$(ENV).yml
+ANSIBLE_FLAGS  := -i $(INVENTORY_FILE) -e @group_vars/all.yml -e @group_vars/$(ENV).yml
 
 ifdef tags
 	ANSIBLE_FLAGS += --tags $(tags)

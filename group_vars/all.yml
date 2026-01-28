@@ -10,3 +10,9 @@ dns_servers:
   - 8.8.8.8
 
 floating_ip_interface: eth0
+
+# Global Network Settings
+# The AdGuard/Gateway VIP
+primary_dns: "10.66.0.253"
+fallback_dns: "1.1.1.1"
+search_domain: "mrahman.xyz"

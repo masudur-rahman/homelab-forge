@@ -1,71 +1,16 @@
 ---
-- name: Update apt cache and upgrade packages
-  ansible.builtin.apt:
-    update_cache: true
-    upgrade: dist
-    cache_valid_time: 3600
+- name: Configure Base System
+  include_tasks: system.yml
+  tags:
+    - system
 
-- name: Install essential system tools
-  ansible.builtin.apt:
-    name:
-      - build-essential
-      - curl
-      - git
-      - vim
-      - fish
-      - tmux
-      - htop
-      - net-tools
-      - dnsutils
-      - python3-requests
-      - cron
-      - tree
-      - iptables
-      - ca-certificates
-      - gnupg
-      - qrencode
-    state: present
+- name: Configure DNS
+  include_tasks: dns.yml
+  when: "'gateway' not in group_names"
+  tags:
+    - dns
 
-# --- Docker Setup ---
-
-- name: Create directory for Docker GPG key
-  file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: '0755'
-
-- name: Download Docker's official GPG key
-  get_url:
-    url: https://download.docker.com/linux/debian/gpg
-    dest: /etc/apt/keyrings/docker.asc
-    mode: '0644'
-    force: true
-
-- name: Add Docker repository to Apt sources
-  shell: |
-    echo \
-    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
-    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-    tee /etc/apt/sources.list.d/docker.list > /dev/null
-  args:
-    creates: /etc/apt/sources.list.d/docker.list
-
-- name: Update apt cache (again) to see Docker repo
-  ansible.builtin.apt:
-    update_cache: yes
-
-- name: Install Docker and Compose Plugin
-  ansible.builtin.apt:
-    name:
-    - docker-ce
-    - docker-ce-cli
-    - containerd.io
-    - docker-buildx-plugin
-    - docker-compose-plugin
-    state: present
-
-- name: Verify Docker is running
-  service:
-    name: docker
-    state: started
-    enabled: yes
+- name: Setup Docker Engine
+  include_tasks: docker.yml
+  tags:
+    - docker

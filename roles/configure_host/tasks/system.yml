@@ -1,0 +1,27 @@
+---
+- name: Update apt cache and upgrade packages
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: dist
+    cache_valid_time: 3600
+
+- name: Install essential system tools
+  ansible.builtin.apt:
+    name:
+      - build-essential
+      - curl
+      - git
+      - vim
+      - fish
+      - tmux
+      - htop
+      - net-tools
+      - dnsutils
+      - python3-requests
+      - cron
+      - tree
+      - iptables
+      - ca-certificates
+      - gnupg
+      - qrencode
+    state: present
