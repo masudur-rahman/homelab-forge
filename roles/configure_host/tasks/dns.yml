@@ -1,6 +1,6 @@
 ---
 - name: Configure System DNS (systemd-resolved)
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/systemd/resolved.conf
     regexp: "{{ item.regexp }}"
     line: "{{ item.line }}"
@@ -12,9 +12,9 @@
   notify: Restart systemd-resolved
 
 - name: Ensure resolv.conf points to systemd-resolved
-  file:
+  ansible.builtin.file:
     src: /run/systemd/resolve/stub-resolv.conf
     dest: /etc/resolv.conf
     state: link
-    force: yes
+    force: true
   notify: Restart systemd-resolved

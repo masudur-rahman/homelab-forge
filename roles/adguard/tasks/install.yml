@@ -1,46 +1,46 @@
 ---
 - name: Check installed AdGuard version
-  command: /opt/adguard/AdGuardHome --version
-  register: installed_version
-  ignore_errors: yes
+  ansible.builtin.command: /opt/adguard/AdGuardHome --version
+  register: adguard_installed_version
   changed_when: false
   failed_when: false
 
 - name: Determine if install/upgrade is needed
-  set_fact:
-    needs_install: >-
-      {{ installed_version.rc != 0 or
-         adguard_version not in installed_version.stdout }}
+  ansible.builtin.set_fact:
+    adguard_needs_install: >-
+      {{ adguard_installed_version.rc != 0 or
+         adguard_version not in adguard_installed_version.stdout }}
 
 - name: Installation Block
+  when: adguard_needs_install
   block:
     - name: Create AdGuard Directory
-      file:
+      ansible.builtin.file:
         path: /opt/adguard
         state: directory
         mode: '0755'
 
     - name: Create Temp Install Dir
-      file:
+      ansible.builtin.file:
         path: /tmp/adguard_install
         state: directory
+        mode: '0755'
 
     - name: Download AdGuard Release
-      unarchive:
+      ansible.builtin.unarchive:
         src: "https://github.com/AdguardTeam/AdGuardHome/releases/download/{{ adguard_version }}/AdGuardHome_linux_amd64.tar.gz"
         dest: /tmp/adguard_install
-        remote_src: yes
+        remote_src: true
 
     - name: Install/Upgrade Binary
-      copy:
+      ansible.builtin.copy:
         src: /tmp/adguard_install/AdGuardHome/AdGuardHome
         dest: /opt/adguard/AdGuardHome
         mode: '0755'
-        remote_src: yes
+        remote_src: true
       notify: Restart AdGuard
 
     - name: Cleanup Temp Files
-      file:
+      ansible.builtin.file:
         path: /tmp/adguard_install
         state: absent
-  when: needs_install

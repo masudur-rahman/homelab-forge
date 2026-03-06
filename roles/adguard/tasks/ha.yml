@@ -1,6 +1,6 @@
 ---
 - name: Register AdGuard Health Check
-  copy:
+  ansible.builtin.copy:
     dest: /etc/keepalived/checks.d/adguard.sh
     mode: '0755'
     content: |

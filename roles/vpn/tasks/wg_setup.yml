@@ -1,33 +1,33 @@
 ---
 - name: Install WireGuard
-  apt:
+  ansible.builtin.apt:
     name: wireguard
     state: present
 
 - name: Enable IPv4 forwarding
-  sysctl:
+  ansible.posix.sysctl:
     name: net.ipv4.ip_forward
     value: '1'
-    sysctl_set: yes
+    sysctl_set: true
     state: present
-    reload: yes
+    reload: true
 
 - name: Deploy Server Private Key
-  copy:
+  ansible.builtin.copy:
     content: "{{ lookup('file', vpn_wireguard_key_path + '/server.key') }}"
     dest: /etc/wireguard/private.key
     mode: '0600'
   notify: Restart WireGuard
 
 - name: Deploy Server Config (wg0.conf)
-  template:
+  ansible.builtin.template:
     src: wg0.conf.j2
     dest: /etc/wireguard/wg0.conf
     mode: '0600'
   notify: Restart WireGuard
 
 - name: Register WireGuard Health Check
-  copy:
+  ansible.builtin.copy:
     dest: /etc/keepalived/checks.d/wireguard.sh
     mode: '0755'
     content: |
@@ -43,4 +43,4 @@
           # State is likely 'DOWN' or 'DORMANT'
           exit 1
       fi
-  ignore_errors: yes
+  failed_when: false

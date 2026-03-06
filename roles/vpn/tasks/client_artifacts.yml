@@ -1,18 +1,17 @@
 ---
 - name: Install QR Encode (Required for Artifacts)
-  apt:
+  ansible.builtin.apt:
     name: qrencode
     state: present
 
 - name: Create Temporary Artifact Directory
-  file:
+  ansible.builtin.file:
     path: /tmp/wg_artifacts
     state: directory
     mode: '0700'
 
-# Generate .conf files from Local Keys -> Remote Temp
 - name: Generate Client Configs (Remote Temp)
-  template:
+  ansible.builtin.template:
     src: client.conf.j2
     dest: "/tmp/wg_artifacts/{{ client.name }}.conf"
     mode: '0600'
@@ -20,9 +19,8 @@
   loop_control:
     loop_var: client
 
-# Generate QR Codes
 - name: Generate QR Codes
-  shell: |
+  ansible.builtin.shell: |
     qrencode -t PNG -o "/tmp/wg_artifacts/{{ client.name }}.png" < "/tmp/wg_artifacts/{{ client.name }}.conf"
   args:
     creates: "/tmp/wg_artifacts/{{ client.name }}.png"
@@ -30,18 +28,16 @@
   loop_control:
     loop_var: client
 
-# Fetch Everything Once
 - name: Fetch Client Artifacts
-  fetch:
+  ansible.builtin.fetch:
     src: "/tmp/wg_artifacts/{{ client.0.name }}.{{ client.1 }}"
     dest: "{{ vpn_wireguard_key_path }}/"
-    flat: yes
+    flat: true
   loop: "{{ vpn_wireguard_clients | product(['conf', 'png']) | list }}"
   loop_control:
     loop_var: client
 
-# Cleanup
 - name: Remove Temporary Artifacts
-  file:
+  ansible.builtin.file:
     path: /tmp/wg_artifacts
     state: absent

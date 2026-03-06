@@ -1,16 +1,12 @@
 ---
 - name: Prepare AdGuard Environment
-  include_tasks: prepare.yml
+  ansible.builtin.include_tasks: prepare.yml
 
 - name: Install AdGuard Home
-  include_tasks: install.yml
+  ansible.builtin.include_tasks: install.yml
 
 - name: Configure AdGuard Service
-  include_tasks: configure.yml
+  ansible.builtin.include_tasks: configure.yml
 
 - name: Setup HA Monitoring
-  include_tasks: ha.yml
-
-# - name: Configure DNS Records via API
-#   include_tasks: configure_dns.yml
-#   tags: dns_records
+  ansible.builtin.include_tasks: ha.yml

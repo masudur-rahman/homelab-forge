@@ -4,7 +4,7 @@ global_defs {
     enable_script_security
 }
 
-{% for check in discovered_checks.files %}
+{% for check in floating_ip_discovered_checks.files %}
 vrrp_script {{ check.path | basename | regex_replace('\.sh$', '') }} {
     script "{{ check.path }}"
     interval 2
@@ -27,11 +27,11 @@ vrrp_instance {{ floating_ip_instance_name | default('VI_1') }} {
     }
 
     virtual_ipaddress {
-        {{ floating_ip }}
+        {{ floating_ip_vip }}
     }
 
     track_script {
-{% for check in discovered_checks.files %}
+{% for check in floating_ip_discovered_checks.files %}
         {{ check.path | basename | regex_replace('\.sh$', '') }}
 {% endfor %}
     }

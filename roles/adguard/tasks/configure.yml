@@ -1,15 +1,16 @@
 ---
 - name: Deploy AdGuard Config
-  template:
+  ansible.builtin.template:
     src: AdGuardHome.yaml.j2
     dest: /opt/adguard/AdGuardHome.yaml
     mode: '0644'
-    force: no
+    force: false
   notify: Restart AdGuard
 
 - name: Install Systemd Service
-  copy:
+  ansible.builtin.copy:
     dest: /etc/systemd/system/adguard.service
+    mode: '0644'
     content: |
       [Unit]
       Description=AdGuard Home
@@ -23,13 +24,13 @@
   notify: Restart AdGuard
 
 - name: Start AdGuard
-  service:
+  ansible.builtin.service:
     name: adguard
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Configure Production resolv.conf
-  copy:
+  ansible.builtin.copy:
     dest: /etc/resolv.conf
     content: |
       # Ansible Managed: Production DNS Configuration

@@ -1,6 +1,6 @@
 ---
 - name: Ensure Project Directory Exists
-  file:
+  ansible.builtin.file:
     path: /opt/expense-tracker
     state: directory
     mode: '0755'
@@ -8,20 +8,20 @@
     group: "{{ ansible_user }}"
 
 - name: Create App Data Directory
-  file:
+  ansible.builtin.file:
     path: /opt/expense-tracker/app_data
     state: directory
     mode: '0755'
 
 - name: Deploy App Configuration
-  template:
+  ansible.builtin.template:
     src: config.yaml.j2
     dest: /opt/expense-tracker/config.yaml
     mode: '0644'
   notify: Restart Expense Tracker
 
 - name: Deploy Docker Compose File
-  template:
+  ansible.builtin.template:
     src: docker-compose.yml.j2
     dest: /opt/expense-tracker/docker-compose.yml
     mode: '0644'

@@ -1,16 +1,16 @@
 ---
 - name: Configure Base System
-  include_tasks: system.yml
+  ansible.builtin.include_tasks: system.yml
   tags:
     - system
 
 - name: Configure DNS
-  include_tasks: dns.yml
+  ansible.builtin.include_tasks: dns.yml
   when: "'gateway' not in group_names"
   tags:
     - dns
 
 - name: Setup Docker Engine
-  include_tasks: docker.yml
+  ansible.builtin.include_tasks: docker.yml
   tags:
     - docker

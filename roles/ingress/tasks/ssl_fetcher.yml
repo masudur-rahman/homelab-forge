@@ -1,12 +1,12 @@
 ---
 - name: Create SSL Directory
-  file:
+  ansible.builtin.file:
     path: "/etc/nginx/ssl/{{ ingress_root_domain }}"
     state: directory
     mode: '0700'
 
 - name: Deploy SSL Fetcher Script
-  template:
+  ansible.builtin.template:
     src: fetch_ssl.py.j2
     dest: "/usr/local/bin/fetch_ssl_{{ ingress_root_domain }}.py"
     mode: '0700'
@@ -15,12 +15,12 @@
   notify: Run SSL Fetcher
 
 - name: Setup Auto-Renewal Cron (Weekly)
-  cron:
+  ansible.builtin.cron:
     name: "Fetch Porkbun SSL"
     special_time: weekly
     job: "/usr/bin/python3 /usr/local/bin/fetch_ssl_{{ ingress_root_domain }}.py"
 
 - name: Initial SSL Fetch
-  command: "/usr/bin/python3 /usr/local/bin/fetch_ssl_{{ ingress_root_domain }}.py"
+  ansible.builtin.command: "/usr/bin/python3 /usr/local/bin/fetch_ssl_{{ ingress_root_domain }}.py"
   args:
     creates: "/etc/nginx/ssl/{{ ingress_root_domain }}/fullchain.pem"

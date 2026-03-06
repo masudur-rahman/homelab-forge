@@ -1,18 +1,18 @@
 ---
-- name: "Ensure Keys Exist"
-  import_tasks: ensure_wg_keys.yml
+- name: Ensure Keys Exist
+  ansible.builtin.import_tasks: ensure_wg_keys.yml
   tags:
     - vpn
     - wireguard_keys
 
-- name: "Setup WireGuard"
-  import_tasks: wg_setup.yml
+- name: Setup WireGuard
+  ansible.builtin.import_tasks: wg_setup.yml
   tags:
     - vpn
     - wireguard_setup
 
-- name: "Generate Client Artifacts"
-  import_tasks: client_artifacts.yml
+- name: Generate Client Artifacts
+  ansible.builtin.import_tasks: client_artifacts.yml
   run_once: true
   tags:
     - vpn

@@ -1,0 +1,7 @@
+---
+- name: Deploy Databases
+  hosts: data
+  become: true
+  roles:
+    - role: database
+      tags: database

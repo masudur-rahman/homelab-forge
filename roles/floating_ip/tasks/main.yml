@@ -1,32 +1,32 @@
 ---
 - name: Install Keepalived
-  apt:
+  ansible.builtin.apt:
     name: keepalived
     state: present
 
 - name: Enable Non-Local Bind
-  sysctl:
+  ansible.posix.sysctl:
     name: net.ipv4.ip_nonlocal_bind
     value: '1'
-    sysctl_set: yes
+    sysctl_set: true
     state: present
 
 - name: Create Checks Directory
-  file:
+  ansible.builtin.file:
     path: /etc/keepalived/checks.d
     state: directory
     mode: '0755'
 
-# 🔍 DYNAMIC DISCOVERY: Find whatever scripts other roles left here
 - name: Discover Health Check Scripts
-  find:
+  ansible.builtin.find:
     paths: /etc/keepalived/checks.d
     patterns: "*.sh"
     file_type: file
-  register: discovered_checks
+  register: floating_ip_discovered_checks
 
 - name: Deploy Dynamic HA Config
-  template:
+  ansible.builtin.template:
     src: keepalived.conf.j2
     dest: /etc/keepalived/keepalived.conf
+    mode: '0644'
   notify: Restart Keepalived

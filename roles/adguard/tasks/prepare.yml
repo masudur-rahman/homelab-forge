@@ -1,31 +1,32 @@
 ---
 - name: Check current DNS connectivity
-  command: host google.com
-  register: dns_check
-  ignore_errors: yes
+  ansible.builtin.command: host google.com
+  register: adguard_dns_check
+  failed_when: false
   changed_when: false
 
 - name: Check if systemd-resolved is causing a conflict
-  command: systemctl is-active systemd-resolved
-  register: resolved_check
-  ignore_errors: yes
-  changed_when: false
+  ansible.builtin.service_facts:
 
 - name: Bootstrap DNS & Free Port 53
+  when: >-
+    adguard_dns_check.rc != 0 or
+    (ansible_facts.services['systemd-resolved.service'] is defined and
+     ansible_facts.services['systemd-resolved.service'].state == 'running')
   block:
     - name: Stop systemd-resolved
-      service:
+      ansible.builtin.service:
         name: systemd-resolved
         state: stopped
-        enabled: no
+        enabled: false
 
     - name: Remove broken resolv.conf symlink
-      file:
+      ansible.builtin.file:
         path: /etc/resolv.conf
         state: absent
 
     - name: Set temporary bootstrap DNS (1.1.1.1)
-      copy:
+      ansible.builtin.copy:
         dest: /etc/resolv.conf
         content: "nameserver 1.1.1.1"
-  when: dns_check.rc != 0 or resolved_check.rc == 0
+        mode: '0644'

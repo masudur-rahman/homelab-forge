@@ -1,12 +1,8 @@
 ---
 - name: Ping Host
-  command: "ping -c 1 -W 1 {{ ansible_host | default(inventory_hostname) }}"
+  ansible.builtin.command: "ping -c 1 -W 1 {{ ansible_host | default(inventory_hostname) }}"
   delegate_to: localhost
   connection: local
   register: ping_result
-  ignore_errors: yes
+  failed_when: false
   changed_when: false
-
-# - name: Report Status
-#   debug:
-#     msg: "Host {{ inventory_hostname }} is {{ '✅ UP' if ping_result.rc == 0 else '❌ DOWN' }}"

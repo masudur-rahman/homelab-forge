@@ -1,3 +1,4 @@
+---
 - name: Connectivity Check
   hosts: all
   gather_facts: false

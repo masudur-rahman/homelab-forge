@@ -1,12 +1,12 @@
 ---
 - name: Ensure Nginx Configuration Directory Exists
-  file:
+  ansible.builtin.file:
     path: /etc/nginx/conf.d
     state: directory
     mode: '0755'
 
 - name: Upload Domain Configurations
-  template:
+  ansible.builtin.template:
     src: domain.conf.j2
     dest: "/etc/nginx/conf.d/{{ server.domain }}.conf"
     mode: '0644'
@@ -16,5 +16,5 @@
   notify: Reload Nginx
 
 - name: Validate Nginx Configuration
-  command: nginx -t
+  ansible.builtin.command: nginx -t
   changed_when: false

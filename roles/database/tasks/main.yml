@@ -1,0 +1,41 @@
+---
+- name: Create Data Directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: '0700'
+    owner: "{{ item.uid }}"
+    group: "{{ item.gid }}"
+  loop:
+    - { path: '/opt/data/redis', uid: 999, gid: 999 }
+    - { path: '/opt/data/postgres', uid: 70, gid: 70 }
+
+- name: Start Postgres Container
+  community.docker.docker_container:
+    name: postgres
+    image: postgres:18-alpine
+    restart_policy: always
+    ports:
+      - "{{ postgres_port }}:{{ postgres_port }}"
+    env:
+      POSTGRES_USER: "{{ postgres_user }}"
+      POSTGRES_PASSWORD: "{{ postgres_root_password }}"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - /opt/data/postgres:/var/lib/postgresql/data
+    shm_size: "256m"
+
+- name: Start Redis Container
+  community.docker.docker_container:
+    name: redis
+    image: redis:8-alpine
+    restart_policy: always
+    ports:
+      - "{{ redis_port }}:{{ redis_port }}"
+    volumes:
+      - /opt/data/redis:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory-policy noeviction
+      --requirepass "{{ redis_password }}"

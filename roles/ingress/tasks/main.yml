@@ -1,12 +1,12 @@
 ---
 - name: Install Nginx Service
-  apt:
+  ansible.builtin.apt:
     name: nginx
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Setup SSL Fetcher (Porkbun)
-  include_tasks: ssl_fetcher.yml
+  ansible.builtin.include_tasks: ssl_fetcher.yml
 
 - name: Configure Nginx Reverse Proxy
-  include_tasks: nginx.yml
+  ansible.builtin.include_tasks: nginx.yml
