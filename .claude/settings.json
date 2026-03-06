@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make *)",
+      "Bash(ansible-playbook *)",
+      "Bash(ansible-lint *)",
+      "Bash(ansible-galaxy *)",
+      "Bash(ansible-inventory *)",
+      "Bash(ansible-vault *)",
+      "Bash(./scripts/*)",
+      "Bash(ssh *)",
+      "Bash(terraform *)",
+      "Bash(kubectl *)",
+      "Bash(docker *)",
+      "Bash(git *)",
+      "Bash(ls *)",
+      "Read(**)",
+      "Edit(**)",
+      "Write(**)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf .)",
+      "Bash(sudo *)"
+    ]
+  }
+}
