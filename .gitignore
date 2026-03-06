@@ -3,3 +3,7 @@ collections/ansible_collections
 files/wireguard
 .idea
 .qodo
+.claude/settings.local.json
+.claude/plan.md
+.vault_pass_*
+vault/*.decrypted.yml

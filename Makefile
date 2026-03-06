@@ -5,7 +5,8 @@ ENV ?= infra
 
 # --- CONSTANTS ---
 INVENTORY_FILE := inventories/$(ENV)/hosts.ini
-ANSIBLE_FLAGS  := -i $(INVENTORY_FILE) -e @group_vars/all.yml -e @group_vars/$(ENV).yml
+VAULT_PASS_FILE := .vault_pass_$(ENV)
+ANSIBLE_FLAGS  := -i $(INVENTORY_FILE) -e @group_vars/all.yml -e @group_vars/$(ENV).yml -e @vault/$(ENV).yml --vault-password-file $(VAULT_PASS_FILE)
 
 ifdef tags
 	ANSIBLE_FLAGS += --tags $(tags)
@@ -23,7 +24,7 @@ ifeq (ssh,$(firstword $(MAKECMDGOALS)))
   $(eval $(SSH_HOST):;@:)
 endif
 
-.PHONY: help init inventory vpn configure_host expense_tracker ping check lint ssh
+.PHONY: help init inventory vpn configure_host expense_tracker ping check lint ssh vault-edit vault-view vault-encrypt vault-decrypt
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -36,6 +37,23 @@ init: ## Install Galaxy collections
 
 inventory: ## Generate dynamic inventory
 	@./scripts/render_inventory.sh $(ENV)
+
+# --- VAULT MANAGEMENT ---
+
+vault-edit: ## Edit vault secrets (Usage: make vault-edit ENV=compute)
+	ansible-vault edit vault/$(ENV).yml --vault-password-file $(VAULT_PASS_FILE)
+
+vault-view: ## View vault secrets (Usage: make vault-view ENV=compute)
+	ansible-vault view vault/$(ENV).yml --vault-password-file $(VAULT_PASS_FILE)
+
+vault-encrypt: ## Re-encrypt from decrypted file (Usage: make vault-encrypt ENV=compute)
+	ansible-vault encrypt vault/$(ENV).decrypted.yml --vault-password-file $(VAULT_PASS_FILE) --output vault/$(ENV).yml
+	@rm -f vault/$(ENV).decrypted.yml
+	@echo "Encrypted vault/$(ENV).decrypted.yml -> vault/$(ENV).yml (decrypted file removed)"
+
+vault-decrypt: ## Decrypt to a separate file for editing (Usage: make vault-decrypt ENV=compute)
+	ansible-vault decrypt vault/$(ENV).yml --vault-password-file $(VAULT_PASS_FILE) --output vault/$(ENV).decrypted.yml
+	@echo "Decrypted to vault/$(ENV).decrypted.yml (edit this file, then run make vault-encrypt)"
 
 # --- OPERATIONAL TASKS ---
 
@@ -50,6 +68,10 @@ gateway: ## Deploy Gateway Stack (VPN + DNS + HA)
 ingress: ## Setup Ingress Proxy (Nginx + SSL)
 	@echo "🚦 Deploying Ingress Controller..."
 	ansible-playbook playbooks/ingress.yml $(ANSIBLE_FLAGS)
+
+database:
+	@echo "Deploying Database to [$(ENV)]..."
+	ansible-playbook playbooks/database.yml $(ANSIBLE_FLAGS)
 
 expense_tracker: ## Deploy Expense Tracker Bot
 	@echo "🤖 Deploying Expense Tracker to [$(ENV)]..."
@@ -69,10 +91,14 @@ ssh: ## SSH into a host (Usage: make ssh gateway-01)
 
 # --- CI / QA ---
 
-check: ## Dry-run to see pending changes
-	@echo "🔍 Dry-Run Check for [$(ENV)]..."
-	ansible-playbook playbooks/vpn.yml $(ANSIBLE_FLAGS) --syntax-check
-	ansible-playbook playbooks/vpn.yml $(ANSIBLE_FLAGS) --check --diff
+PLAYBOOKS := $(wildcard playbooks/*.yml)
+
+check: ## Dry-run syntax check all playbooks
+	@echo "🔍 Syntax Check for [$(ENV)]..."
+	@for pb in $(PLAYBOOKS); do \
+		echo "  Checking $$pb..."; \
+		ansible-playbook $$pb $(ANSIBLE_FLAGS) --syntax-check; \
+	done
 
 lint: ## Lint YAML files (Excludes collections to prevent hanging)
 	@echo "🧹 Linting..."
