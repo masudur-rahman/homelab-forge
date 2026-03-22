@@ -1,0 +1,20 @@
+services:
+  netdata:
+    image: netdata/netdata:{{ netdata_agent_version }}
+    container_name: netdata-agent
+    hostname: {{ inventory_hostname }}
+    restart: unless-stopped
+    cap_add:
+      - SYS_PTRACE
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - /opt/netdata/config:/etc/netdata
+      - /opt/netdata/lib:/var/lib/netdata
+      - /opt/netdata/cache:/var/cache/netdata
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro

@@ -1,0 +1,7 @@
+# Netdata Child Agent Stream Configuration
+# Stream metrics to the parent node
+
+[stream]
+    enabled = yes
+    destination = {{ monitoring_netdata_parent_host }}:19999
+    api key = {{ monitoring_netdata_api_key }}

@@ -1,0 +1,34 @@
+---
+- name: Create Netdata Agent Directories
+  ansible.builtin.file:
+    path: "/opt/netdata/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - config
+    - lib
+    - cache
+  tags: netdata
+
+- name: Deploy Netdata Agent Stream Configuration
+  ansible.builtin.template:
+    src: stream.conf.j2
+    dest: /opt/netdata/config/stream.conf
+    mode: "0644"
+  notify: Restart Netdata Agent
+  tags: netdata
+
+- name: Deploy Docker Compose File
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /opt/netdata/docker-compose.yml
+    mode: "0644"
+  notify: Restart Netdata Agent
+  tags: netdata
+
+- name: Start Netdata Agent
+  community.docker.docker_compose_v2:
+    project_src: /opt/netdata
+    state: present
+    pull: always
+  tags: netdata
