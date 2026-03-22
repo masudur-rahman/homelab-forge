@@ -1,0 +1,5 @@
+---
+monitoring_uptime_kuma_version: "1"
+monitoring_netdata_version: "stable"
+monitoring_uptime_kuma_port: 3001
+monitoring_netdata_port: 19999

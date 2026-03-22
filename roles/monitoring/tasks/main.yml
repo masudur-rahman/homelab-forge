@@ -1,0 +1,44 @@
+---
+- name: Create Monitoring Base Directory
+  ansible.builtin.file:
+    path: /opt/monitoring
+    state: directory
+    mode: "0755"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  tags: monitoring
+
+- name: Create Monitoring Data Directories
+  ansible.builtin.file:
+    path: "/opt/monitoring/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - uptime-kuma
+    - netdata/config
+    - netdata/lib
+    - netdata/cache
+  tags: monitoring
+
+- name: Deploy Netdata Stream Configuration
+  ansible.builtin.template:
+    src: stream.conf.j2
+    dest: /opt/monitoring/netdata/config/stream.conf
+    mode: "0644"
+  notify: Restart Monitoring Stack
+  tags: monitoring
+
+- name: Deploy Docker Compose File
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /opt/monitoring/docker-compose.yml
+    mode: "0644"
+  notify: Restart Monitoring Stack
+  tags: monitoring
+
+- name: Start Monitoring Stack
+  community.docker.docker_compose_v2:
+    project_src: /opt/monitoring
+    state: present
+    pull: always
+  tags: monitoring
