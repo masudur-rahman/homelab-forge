@@ -1,0 +1,14 @@
+---
+- name: Deploy Monitoring Stack
+  hosts: monitoring
+  become: true
+  roles:
+    - role: monitoring
+      tags: monitoring
+
+- name: Deploy Netdata Agents
+  hosts: all:!monitoring
+  become: true
+  roles:
+    - role: netdata_agent
+      tags: netdata

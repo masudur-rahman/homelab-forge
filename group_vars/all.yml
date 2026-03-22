@@ -16,3 +16,7 @@ floating_ip_interface: eth0
 primary_dns: "10.66.0.253"
 fallback_dns: "1.1.1.1"
 search_domain: "mrahman.xyz"
+
+# Monitoring
+monitoring_netdata_parent_host: "10.66.0.40"
+monitoring_netdata_api_key: "{{ vault_monitoring_netdata_api_key }}"

@@ -20,6 +20,12 @@ ingress_sites:
   - domain: "adguard.mrahman.xyz"
     upstream: "http://10.66.0.253:3000"
     websocket: false
+  - domain: "status.mrahman.xyz"
+    upstream: "http://10.66.0.40:3001"
+    websocket: true
+  - domain: "netdata.mrahman.xyz"
+    upstream: "http://10.66.0.40:19999"
+    websocket: false
 
 porkbun_api_key: "{{ vault_porkbun_api_key }}"
 porkbun_secret_key: "{{ vault_porkbun_secret_key }}"
