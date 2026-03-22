@@ -14,7 +14,7 @@
   ansible.builtin.template:
     src: stream.conf.j2
     dest: /opt/netdata/config/stream.conf
-    mode: "0644"
+    mode: "0600"
   notify: Restart Netdata Agent
   tags: netdata
 

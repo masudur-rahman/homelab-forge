@@ -1,2 +1,6 @@
 ---
 netdata_agent_version: "stable"
+
+# Required (set in group_vars/all.yml):
+# monitoring_netdata_parent_host: "10.66.0.40"
+# monitoring_netdata_api_key: "{{ vault_monitoring_netdata_api_key }}"

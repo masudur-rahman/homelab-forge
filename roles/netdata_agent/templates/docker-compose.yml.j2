@@ -2,7 +2,7 @@ services:
   netdata:
     image: netdata/netdata:{{ netdata_agent_version }}
     container_name: netdata-agent
-    hostname: {{ inventory_hostname }}
+    hostname: "{{ inventory_hostname }}"
     restart: unless-stopped
     cap_add:
       - SYS_PTRACE

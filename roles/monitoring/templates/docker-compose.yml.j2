@@ -11,7 +11,7 @@ services:
   netdata:
     image: netdata/netdata:{{ monitoring_netdata_version }}
     container_name: netdata
-    hostname: {{ inventory_hostname }}
+    hostname: "{{ inventory_hostname }}"
     restart: unless-stopped
     ports:
       - "{{ monitoring_netdata_port }}:19999"
