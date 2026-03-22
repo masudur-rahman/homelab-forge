@@ -24,7 +24,7 @@ ifeq (ssh,$(firstword $(MAKECMDGOALS)))
   $(eval $(SSH_HOST):;@:)
 endif
 
-.PHONY: help init inventory vpn configure_host expense_tracker ping check lint ssh vault-edit vault-view vault-encrypt vault-decrypt
+.PHONY: help init inventory vpn configure_host expense_tracker monitoring ping check lint ssh vault-edit vault-view vault-encrypt vault-decrypt
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -76,6 +76,10 @@ database:
 expense_tracker: ## Deploy Expense Tracker Bot
 	@echo "🤖 Deploying Expense Tracker to [$(ENV)]..."
 	ansible-playbook playbooks/expense_tracker.yml $(ANSIBLE_FLAGS)
+
+monitoring: ## Deploy Monitoring Stack + Agents
+	@echo "Deploying Monitoring to [$(ENV)]..."
+	ansible-playbook playbooks/monitoring.yml $(ANSIBLE_FLAGS)
 
 ping: ## Connectivity Check (Works for Talos/No-Python)
 	@echo "📡 Pinging [$(ENV)] hosts..."
