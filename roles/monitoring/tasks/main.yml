@@ -44,3 +44,45 @@
     state: present
     pull: always
   tags: monitoring
+
+- name: Wait for Uptime Kuma Port
+  ansible.builtin.wait_for:
+    port: 3001
+    state: started
+    timeout: 120
+  tags: monitoring
+
+- name: Generate Uptime Kuma Admin Password Hash
+  ansible.builtin.command:
+    cmd: "docker exec uptime-kuma node -e \"console.log(require('bcryptjs').hashSync('{{ vault_monitoring_admin_password }}', 10))\""
+  register: monitoring_kuma_hash
+  until: monitoring_kuma_hash.rc == 0
+  retries: 5
+  delay: 5
+  changed_when: false
+  tags: monitoring
+
+- name: Deploy Uptime Kuma Provisioning SQL
+  ansible.builtin.template:
+    src: provision_kuma.sql.j2
+    dest: /opt/monitoring/uptime-kuma/provision_kuma.sql
+    mode: '0644'
+  vars:
+    monitoring_admin_password_hash: "{{ monitoring_kuma_hash.stdout }}"
+  tags: monitoring
+
+- name: Provision Uptime Kuma (Admin, Monitors, Status Page)
+  ansible.builtin.shell:
+    cmd: "docker exec -i uptime-kuma sqlite3 /app/data/kuma.db < /opt/monitoring/uptime-kuma/provision_kuma.sql"
+  register: monitoring_kuma_provision
+  until: monitoring_kuma_provision.rc == 0
+  retries: 15
+  delay: 10
+  changed_when: false
+  tags: monitoring
+
+- name: Restart Uptime Kuma to apply provisioning
+  ansible.builtin.command:
+    cmd: "docker restart uptime-kuma"
+  changed_when: true
+  tags: monitoring

@@ -27,11 +27,13 @@ ingress_sites:
     upstream: "http://10.66.0.40:19999"
     websocket: false
 
+monitoring_admin_user: admin
+
 porkbun_api_key: "{{ vault_porkbun_api_key }}"
 porkbun_secret_key: "{{ vault_porkbun_secret_key }}"
 
 # Expense Tracker Bot Config
-expense_bot_version: "v1.3.1"
+expense_bot_version: "v1.3.3"
 expense_bot_token: "{{ vault_expense_bot_token }}"
 expense_bot_openrouter_key: "{{ vault_expense_bot_openrouter_key }}"
 expense_bot_user: "masudur_rahman"
@@ -49,33 +51,44 @@ expense_redis_host: "{{ redis_host }}"
 expense_redis_port: "{{ redis_port }}"
 expense_redis_pass: "{{ redis_password }}"
 
-# Uptime Kuma Monitors (reference for manual UI setup)
+# Uptime Kuma Monitors (automated setup)
+# Targets can be hostnames (resolved to ansible_host) or full URLs
 monitoring_uptime_kuma_monitors:
-  - name: "Proxmox"
-    type: "http"
-    url: "https://10.66.0.10:8006"
-    accepted_statuscodes: ["401"]
-    ignoreTls: true
-  - name: "AdGuard DNS"
-    type: "http"
-    url: "http://10.66.0.253:3000"
-  - name: "Gateway/Router"
-    type: "ping"
-    hostname: "10.66.0.1"
-  - name: "Nginx Portal"
-    type: "http"
-    url: "http://10.66.0.201"
+  # Infrastructure (Nodes)
+  - { name: "gateway-01", type: "ping", target: "gateway-01", category: "Infrastructure" }
+  - { name: "gateway-02", type: "ping", target: "gateway-02", category: "Infrastructure" }
+  - { name: "portal-01", type: "ping", target: "portal-01", category: "Infrastructure" }
+  - { name: "data-01", type: "ping", target: "data-01", category: "Infrastructure" }
+  - { name: "expense-tracker-01", type: "ping", target: "expense-tracker-01", category: "Infrastructure" }
+  - { name: "monitoring-01", type: "ping", target: "monitoring-01", category: "Infrastructure" }
+
+  # Core Services
+  - { name: "Router Dashboard", type: "http", target: "https://gateway.mrahman.xyz", category: "Services" }
+  - { name: "AdGuard Admin", type: "http", target: "http://adguard.mrahman.xyz", category: "Services" }
+  - { name: "WireGuard Server", type: "ping", target: "gateway-01", category: "Services" }
+
+  # Databases & Workloads
   - name: "PostgreSQL"
     type: "port"
-    hostname: "10.66.0.20"
+    target: "data-01"
     port: 5432
+    category: "Databases"
   - name: "Redis"
     type: "port"
-    hostname: "10.66.0.20"
+    target: "data-01"
     port: 6379
+    category: "Databases"
   - name: "Expense Tracker Bot"
     type: "http"
-    url: "http://10.66.0.50:8080"
-  - name: "Netdata"
+    target: "http://10.66.0.50:8080/healthz"
+    category: "Apps"
+
+  # Monitoring
+  - name: "Netdata Dashboard"
     type: "http"
-    url: "http://10.66.0.40:19999"
+    target: "https://netdata.mrahman.xyz"
+    category: "Monitoring"
+  - name: "Uptime Kuma"
+    type: "http"
+    target: "http://localhost:3001"
+    category: "Monitoring"

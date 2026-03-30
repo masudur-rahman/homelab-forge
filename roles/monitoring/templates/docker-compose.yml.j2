@@ -15,6 +15,9 @@ services:
     restart: unless-stopped
     ports:
       - "{{ monitoring_netdata_port }}:19999"
+    environment:
+      - NETDATA_REGISTRY_ENABLED=yes
+      - NETDATA_DISABLE_CLOUD=1
     cap_add:
       - SYS_PTRACE
       - SYS_ADMIN

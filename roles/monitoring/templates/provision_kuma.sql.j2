@@ -1,0 +1,63 @@
+-- Uptime Kuma Provisioning Script (Version 1.23.17)
+
+-- 1. Admin User
+INSERT INTO user (username, password, active) 
+SELECT '{{ monitoring_admin_user }}', '{{ monitoring_admin_password_hash }}', 1 
+WHERE NOT EXISTS (SELECT 1 FROM user WHERE username = '{{ monitoring_admin_user }}');
+
+-- 2. Status Page
+INSERT INTO status_page (slug, title, theme, published, show_tags, icon)
+SELECT 'homelab', 'Homelab Status', 'dark', 1, 0, ''
+WHERE NOT EXISTS (SELECT 1 FROM status_page WHERE slug = 'homelab');
+
+-- 3. Groups (Categories)
+{% set categories = monitoring_uptime_kuma_monitors | map(attribute='category') | unique | list %}
+{% for cat in categories %}
+INSERT INTO `group` (name, status_page_id, active, public, weight)
+SELECT '{{ cat }}', (SELECT id FROM status_page WHERE slug = 'homelab'), 1, 1, {{ loop.index }}
+WHERE NOT EXISTS (SELECT 1 FROM `group` WHERE name = '{{ cat }}' AND status_page_id = (SELECT id FROM status_page WHERE slug = 'homelab'));
+
+-- Ensure existing groups are public
+UPDATE `group` SET public = 1 WHERE name = '{{ cat }}' AND status_page_id = (SELECT id FROM status_page WHERE slug = 'homelab');
+{% endfor %}
+
+-- 4. Monitors and Group Links
+{% for m in monitoring_uptime_kuma_monitors %}
+{% set target_val = m.target | default(m.url) | default(m.hostname) %}
+{% if target_val in groups['all'] or hostvars[target_val] is defined %}
+  {% set resolved_target = hostvars[target_val].ansible_host | default(target_val) %}
+{% else %}
+  {% set resolved_target = target_val %}
+{% endif %}
+
+-- Create Monitor if it doesn't exist
+INSERT INTO monitor (name, type, active, interval, url, hostname, port, maxretries, weight, ignore_tls, upside_down, expiry_notification, user_id)
+SELECT '{{ m.name }}', '{{ m.type | default('http') }}', 1, 60, 
+    {% if m.type == 'http' %}'{{ resolved_target }}'{% else %}NULL{% endif %}, 
+    {% if m.type != 'http' %}'{{ resolved_target }}'{% else %}NULL{% endif %}, 
+    {{ m.port | default('NULL') }}, 1, {{ loop.index }}, {{ 1 if m.ignoreTls | default(false) else 0 }}, 0, 1, (SELECT id FROM user WHERE username = '{{ monitoring_admin_user }}')
+WHERE NOT EXISTS (SELECT 1 FROM monitor WHERE name = '{{ m.name }}');
+
+-- SYNC properties for existing monitors
+UPDATE monitor 
+SET 
+    type = '{{ m.type | default('http') }}',
+    url = {% if m.type == 'http' %}'{{ resolved_target }}'{% else %}NULL{% endif %},
+    hostname = {% if m.type != 'http' %}'{{ resolved_target }}'{% else %}NULL{% endif %},
+    port = {{ m.port | default('NULL') }},
+    ignore_tls = {{ 1 if m.ignoreTls | default(false) else 0 }},
+    user_id = (SELECT id FROM user WHERE username = '{{ monitoring_admin_user }}')
+WHERE name = '{{ m.name }}';
+
+-- Link Monitor to Group
+INSERT INTO monitor_group (monitor_id, group_id, weight)
+SELECT (SELECT id FROM monitor WHERE name = '{{ m.name }}'), (SELECT id FROM `group` WHERE name = '{{ m.category | default('Infrastructure') }}' AND status_page_id = (SELECT id FROM status_page WHERE slug = 'homelab')), {{ loop.index }}
+WHERE NOT EXISTS (
+    SELECT 1 FROM monitor_group 
+    WHERE monitor_id = (SELECT id FROM monitor WHERE name = '{{ m.name }}')
+    AND group_id = (SELECT id FROM `group` WHERE name = '{{ m.category | default('Infrastructure') }}' AND status_page_id = (SELECT id FROM status_page WHERE slug = 'homelab'))
+);
+{% endfor %}
+
+-- Special Fix: WireGuard (UDP 51820) cannot be monitored via TCP Port check. Switch to Ping.
+UPDATE monitor SET type = 'ping', port = NULL WHERE name = 'WireGuard Server' AND type = 'port' AND port = 51820;

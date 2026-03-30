@@ -4,6 +4,9 @@ services:
     container_name: netdata-agent
     hostname: "{{ inventory_hostname }}"
     restart: unless-stopped
+    environment:
+      - NETDATA_HOSTNAME={{ inventory_hostname }}
+      - NETDATA_REGISTRY_TO_ANNOUNCE=http://{{ monitoring_netdata_parent_host }}:19999
     cap_add:
       - SYS_PTRACE
       - SYS_ADMIN

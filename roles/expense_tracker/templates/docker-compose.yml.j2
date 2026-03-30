@@ -4,11 +4,13 @@ services:
     container_name: expense-tracker
     command: serve
     restart: unless-stopped
+    ports:
+      - "8080:8080"
 
     environment:
       - TELEGRAM_BOT_TOKEN={{ expense_bot_token }}
       - OPENROUTER_API_KEY={{ expense_bot_openrouter_key }}
 
     volumes:
-      - ./config.yaml:/configs/.expense-tracker.yaml
-      - ./app_data:/.expense-tracker
+      - ./config.yaml:/app/.configs/.expense-tracker.yaml
+      - ./app_data:/app/.expense-tracker
