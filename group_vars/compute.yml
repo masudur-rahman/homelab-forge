@@ -12,28 +12,31 @@ ingress_root_domain: "mrahman.xyz"
 ingress_cert_email: "masudjuly02@gmail.com"
 ingress_sites:
   - domain: "gateway.mrahman.xyz"
-    upstream: "http://10.66.0.1"
+    upstream: "http://{{ ips.router }}"
     force_ip_header: true
   - domain: "proxmox.mrahman.xyz"
-    upstream: "https://10.66.0.10:8006"
+    upstream: "https://{{ ips.proxmox }}:8006"
     websocket: true
   - domain: "adguard.mrahman.xyz"
-    upstream: "http://10.66.0.253:3000"
+    upstream: "http://{{ ips.adguard }}:3000"
     websocket: false
   - domain: "status.mrahman.xyz"
-    upstream: "http://10.66.0.40:3001"
+    upstream: "http://{{ ips.monitoring }}:3001"
     websocket: true
   - domain: "netdata.mrahman.xyz"
-    upstream: "http://10.66.0.40:19999"
+    upstream: "http://{{ ips.monitoring }}:19999"
     websocket: false
 
+# Monitoring
+monitoring_netdata_parent_host: "{{ ips.monitoring }}"
+monitoring_netdata_api_key: "{{ vault_monitoring_netdata_api_key }}"
 monitoring_admin_user: admin
 
 porkbun_api_key: "{{ vault_porkbun_api_key }}"
 porkbun_secret_key: "{{ vault_porkbun_secret_key }}"
 
 # Expense Tracker Bot Config
-expense_bot_version: "v1.3.3"
+expense_bot_version: "v1.3.4"
 expense_bot_token: "{{ vault_expense_bot_token }}"
 expense_bot_openrouter_key: "{{ vault_expense_bot_openrouter_key }}"
 expense_bot_user: "masudur_rahman"
@@ -80,7 +83,7 @@ monitoring_uptime_kuma_monitors:
     category: "Databases"
   - name: "Expense Tracker Bot"
     type: "http"
-    target: "http://10.66.0.50:8080/healthz"
+    target: "http://{{ ips.expense_tracker }}:8080/healthz"
     category: "Apps"
 
   # Monitoring

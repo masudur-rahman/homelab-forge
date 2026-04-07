@@ -11,12 +11,23 @@ dns_servers:
 
 floating_ip_interface: eth0
 
+# Central IP Map
+# - VIPs / external hosts: literal values
+# - Inventory hosts: sourced from hosts.ini via hostvars (do not duplicate)
+ips:
+  # VIPs / external
+  router: "10.66.0.1"
+  adguard: "10.66.0.253"
+  proxmox: "10.66.0.10"
+  # Inventory hosts (resolved lazily; only available in their own env)
+  gateway_01: "{{ hostvars['gateway-01'].ansible_host | default('') }}"
+  gateway_02: "{{ hostvars['gateway-02'].ansible_host | default('') }}"
+  data: "{{ hostvars['data-01'].ansible_host | default('') }}"
+  expense_tracker: "{{ hostvars['expense-tracker-01'].ansible_host | default('') }}"
+  monitoring: "{{ hostvars['monitoring-01'].ansible_host | default('') }}"
+  portal: "{{ hostvars['portal-01'].ansible_host | default('') }}"
+
 # Global Network Settings
-# The AdGuard/Gateway VIP
-primary_dns: "10.66.0.253"
+primary_dns: "{{ ips.adguard }}"
 fallback_dns: "1.1.1.1"
 search_domain: "mrahman.xyz"
-
-# Monitoring
-monitoring_netdata_parent_host: "10.66.0.40"
-monitoring_netdata_api_key: "{{ vault_monitoring_netdata_api_key }}"

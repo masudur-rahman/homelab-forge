@@ -8,7 +8,7 @@ vpn_wireguard_key_path: "{{ current_directory }}/files/wireguard"
 vpn_wireguard_interface_ip: "10.8.0.1"
 vpn_wireguard_port: 51820
 
-gateway_floating_ip: "10.66.0.253"
+gateway_floating_ip: "{{ ips.adguard }}"
 gateway_floating_ip_router_id: 50
 gateway_floating_ip_auth_pass: "{{ vault_gateway_floating_ip_auth_pass }}"
 gateway_floating_ip_instance_name: "GATEWAY"
