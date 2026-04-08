@@ -1,0 +1,79 @@
+---
+# Sync AdGuard DNS rewrites so every ingress domain resolves to the portal VM.
+# Add/update only — entries not in ingress_sites are left untouched.
+- name: Build Desired DNS Rewrites
+  ansible.builtin.set_fact:
+    ingress_adguard_desired_rewrites: "{{ ingress_adguard_desired_rewrites | default([]) + [{'domain': item.domain, 'answer': ips.portal}] }}"
+  loop: "{{ ingress_sites }}"
+  loop_control:
+    label: "{{ item.domain }}"
+  run_once: true
+  tags: ingress
+
+- name: Fetch Current AdGuard DNS Rewrites
+  ansible.builtin.uri:
+    url: "http://{{ ips.adguard }}:{{ adguard_port_web }}/control/rewrite/list"
+    method: GET
+    url_username: "{{ adguard_admin_user if adguard_admin_password else omit }}"
+    url_password: "{{ adguard_admin_password if adguard_admin_password else omit }}"
+    force_basic_auth: true
+    return_content: true
+    status_code: 200
+  register: ingress_adguard_rewrites_current
+  run_once: true
+  tags: ingress
+
+- name: Compute Stale DNS Rewrites To Replace
+  ansible.builtin.set_fact:
+    ingress_adguard_stale_rewrites: >-
+      {{ ingress_adguard_rewrites_current.json
+         | selectattr('domain', 'in', ingress_adguard_desired_rewrites | map(attribute='domain') | list)
+         | rejectattr('answer', 'equalto', ips.portal)
+         | list }}
+  run_once: true
+  tags: ingress
+
+- name: Compute Missing DNS Rewrites To Add
+  ansible.builtin.set_fact:
+    ingress_adguard_missing_rewrites: >-
+      {{ ingress_adguard_desired_rewrites
+         | rejectattr('domain', 'in',
+             ingress_adguard_rewrites_current.json
+             | selectattr('answer', 'equalto', ips.portal)
+             | map(attribute='domain')
+             | list)
+         | list }}
+  run_once: true
+  tags: ingress
+
+- name: Delete Stale DNS Rewrites
+  ansible.builtin.uri:
+    url: "http://{{ ips.adguard }}:{{ adguard_port_web }}/control/rewrite/delete"
+    method: POST
+    body_format: json
+    body: "{{ item }}"
+    url_username: "{{ adguard_admin_user if adguard_admin_password else omit }}"
+    url_password: "{{ adguard_admin_password if adguard_admin_password else omit }}"
+    force_basic_auth: true
+    status_code: 200
+  loop: "{{ ingress_adguard_stale_rewrites }}"
+  loop_control:
+    label: "{{ item.domain }}"
+  run_once: true
+  tags: ingress
+
+- name: Add DNS Rewrites
+  ansible.builtin.uri:
+    url: "http://{{ ips.adguard }}:{{ adguard_port_web }}/control/rewrite/add"
+    method: POST
+    body_format: json
+    body: "{{ item }}"
+    url_username: "{{ adguard_admin_user if adguard_admin_password else omit }}"
+    url_password: "{{ adguard_admin_password if adguard_admin_password else omit }}"
+    force_basic_auth: true
+    status_code: 200
+  loop: "{{ (ingress_adguard_stale_rewrites + ingress_adguard_missing_rewrites) | unique }}"
+  loop_control:
+    label: "{{ item.domain }}"
+  run_once: true
+  tags: ingress

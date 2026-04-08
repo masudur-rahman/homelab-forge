@@ -22,7 +22,6 @@ vpn_wireguard_clients:
 # --- AdGuard Home ---
 adguard_version: "v0.107.71"
 adguard_bind_ip: "0.0.0.0"
-adguard_port_web: 3000
 adguard_port_dns: 53
 adguard_upstreams:
   - "1.1.1.1"

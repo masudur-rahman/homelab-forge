@@ -31,3 +31,7 @@ ips:
 primary_dns: "{{ ips.adguard }}"
 fallback_dns: "1.1.1.1"
 search_domain: "mrahman.xyz"
+
+# AdGuard (shared across envs — needed by ingress sync from compute)
+adguard_port_web: 3000
+adguard_admin_user: admin
