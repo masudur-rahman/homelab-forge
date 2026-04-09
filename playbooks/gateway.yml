@@ -9,6 +9,7 @@
     - role: adguard
       tags:
         - dns
+        - adguard
 
     - role: floating_ip
       vars:

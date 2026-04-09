@@ -4,3 +4,7 @@
     name: systemd-resolved
     state: restarted
     enabled: true
+
+- name: Flush DNS cache
+  ansible.builtin.command: resolvectl flush-caches
+  changed_when: true

@@ -9,13 +9,11 @@
   loop_control:
     label: "{{ item.domain }}"
   run_once: true
-  tags: [adguard, adguard-rewrites]
 
 - name: Append Extra DNS Rewrites
   ansible.builtin.set_fact:
     adguard_desired_rewrites: "{{ (adguard_desired_rewrites | default([])) + (adguard_extra_rewrites | default([])) }}"
   run_once: true
-  tags: [adguard, adguard-rewrites]
 
 - name: Fetch Current AdGuard DNS Rewrites
   ansible.builtin.uri:
@@ -28,7 +26,6 @@
     status_code: 200
   register: adguard_rewrites_current
   run_once: true
-  tags: [adguard, adguard-rewrites]
 
 - name: Compute Stale DNS Rewrites To Replace
   ansible.builtin.set_fact:
@@ -38,13 +35,11 @@
          | difference(adguard_desired_rewrites)
          | list }}
   run_once: true
-  tags: [adguard, adguard-rewrites]
 
 - name: Compute Missing DNS Rewrites To Add
   ansible.builtin.set_fact:
     adguard_missing_rewrites: "{{ adguard_desired_rewrites | difference(adguard_rewrites_current.json) | list }}"
   run_once: true
-  tags: [adguard, adguard-rewrites]
 
 - name: Delete Stale DNS Rewrites
   ansible.builtin.uri:
@@ -60,7 +55,6 @@
   loop_control:
     label: "{{ item.domain }}"
   run_once: true
-  tags: [adguard, adguard-rewrites]
 
 - name: Add DNS Rewrites
   ansible.builtin.uri:
@@ -76,4 +70,3 @@
   loop_control:
     label: "{{ item.domain }}"
   run_once: true
-  tags: [adguard, adguard-rewrites]

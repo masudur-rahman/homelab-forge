@@ -9,7 +9,9 @@
     - { regexp: '^#?DNS=', line: "DNS={{ primary_dns }}" }
     - { regexp: '^#?FallbackDNS=', line: "FallbackDNS={{ fallback_dns | default('1.1.1.1') }}" }
     - { regexp: '^#?Domains=', line: "Domains={{ search_domain }}" }
-  notify: Restart systemd-resolved
+  notify:
+    - Restart systemd-resolved
+    - Flush DNS cache
 
 - name: Ensure resolv.conf points to systemd-resolved
   ansible.builtin.file:
@@ -17,4 +19,9 @@
     dest: /etc/resolv.conf
     state: link
     force: true
-  notify: Restart systemd-resolved
+  notify:
+    - Restart systemd-resolved
+    - Flush DNS cache
+
+- name: Apply DNS changes immediately
+  ansible.builtin.meta: flush_handlers

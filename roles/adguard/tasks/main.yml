@@ -13,4 +13,4 @@
 
 - name: Sync DNS Rewrites
   ansible.builtin.include_tasks: rewrites.yml
-  tags: [adguard, adguard-rewrites]
+  tags: adguard_rewrites
