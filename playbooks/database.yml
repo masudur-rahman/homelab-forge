@@ -4,4 +4,5 @@
   become: true
   roles:
     - role: database
-      tags: database
+      tags:
+        - database

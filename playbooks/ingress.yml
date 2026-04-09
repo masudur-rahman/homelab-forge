@@ -4,4 +4,5 @@
   become: true
   roles:
     - role: ingress
-      tags: ingress
+      tags:
+        - ingress

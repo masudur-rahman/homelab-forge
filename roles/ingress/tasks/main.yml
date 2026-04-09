@@ -4,9 +4,15 @@
     name: nginx
     state: present
     update_cache: true
+  tags:
+    - ingress_install
 
 - name: Setup SSL Fetcher (Porkbun)
   ansible.builtin.include_tasks: ssl_fetcher.yml
+  tags:
+    - ingress_ssl
 
 - name: Configure Nginx Reverse Proxy
   ansible.builtin.include_tasks: nginx.yml
+  tags:
+    - ingress_nginx

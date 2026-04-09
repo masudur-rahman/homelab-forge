@@ -6,7 +6,6 @@
     mode: "0755"
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
-  tags: monitoring
 
 - name: Create Monitoring Data Directories
   ansible.builtin.file:
@@ -20,7 +19,6 @@
     - netdata/config
     - netdata/lib
     - netdata/cache
-  tags: monitoring
 
 - name: Deploy Netdata Stream Configuration
   ansible.builtin.template:
@@ -28,7 +26,6 @@
     dest: /opt/monitoring/netdata/config/stream.conf
     mode: "0600"
   notify: Restart Monitoring Stack
-  tags: monitoring
 
 - name: Deploy Docker Compose File
   ansible.builtin.template:
@@ -36,21 +33,18 @@
     dest: /opt/monitoring/docker-compose.yml
     mode: "0644"
   notify: Restart Monitoring Stack
-  tags: monitoring
 
 - name: Start Monitoring Stack
   community.docker.docker_compose_v2:
     project_src: /opt/monitoring
     state: present
     pull: always
-  tags: monitoring
 
 - name: Wait for Uptime Kuma Port
   ansible.builtin.wait_for:
     port: 3001
     state: started
     timeout: 120
-  tags: monitoring
 
 - name: Generate Uptime Kuma Admin Password Hash
   ansible.builtin.command:
@@ -60,7 +54,6 @@
   retries: 5
   delay: 5
   changed_when: false
-  tags: monitoring
 
 - name: Deploy Uptime Kuma Provisioning SQL
   ansible.builtin.template:
@@ -69,7 +62,6 @@
     mode: '0644'
   vars:
     monitoring_admin_password_hash: "{{ monitoring_kuma_hash.stdout }}"
-  tags: monitoring
 
 - name: Provision Uptime Kuma (Admin, Monitors, Status Page)
   ansible.builtin.shell:
@@ -79,10 +71,8 @@
   retries: 15
   delay: 10
   changed_when: false
-  tags: monitoring
 
 - name: Restart Uptime Kuma to apply provisioning
   ansible.builtin.command:
     cmd: "docker restart uptime-kuma"
   changed_when: true
-  tags: monitoring

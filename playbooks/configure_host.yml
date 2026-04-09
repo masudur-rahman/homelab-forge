@@ -3,4 +3,6 @@
   hosts: all
   become: true
   roles:
-   - configure_host
+    - role: configure_host
+      tags:
+        - configure_host

@@ -5,3 +5,5 @@
   become: false
   roles:
     - role: ping
+      tags:
+        - ping

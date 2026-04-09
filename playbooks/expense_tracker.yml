@@ -4,4 +4,5 @@
   become: true
   roles:
     - role: expense_tracker
-      tags: expense
+      tags:
+        - expense
