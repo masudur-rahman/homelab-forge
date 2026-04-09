@@ -7,33 +7,10 @@ postgres_user: "postgres"
 postgres_root_password: "{{ vault_postgres_root_password }}"
 postgres_port: 5432
 
-# Ingress (Nginx Reverse Proxy)
-ingress_root_domain: "mrahman.xyz"
-ingress_cert_email: "masudjuly02@gmail.com"
-ingress_sites:
-  - domain: "gateway.mrahman.xyz"
-    upstream: "http://{{ ips.router }}"
-    force_ip_header: true
-  - domain: "proxmox.mrahman.xyz"
-    upstream: "https://{{ ips.proxmox }}:8006"
-    websocket: true
-  - domain: "adguard.mrahman.xyz"
-    upstream: "http://{{ ips.adguard }}:3000"
-    websocket: false
-  - domain: "status.mrahman.xyz"
-    upstream: "http://{{ ips.monitoring }}:3001"
-    websocket: true
-  - domain: "netdata.mrahman.xyz"
-    upstream: "http://{{ ips.monitoring }}:19999"
-    websocket: false
-
 # Monitoring
 monitoring_netdata_parent_host: "{{ ips.monitoring }}"
 monitoring_netdata_api_key: "{{ vault_monitoring_netdata_api_key }}"
 monitoring_admin_user: admin
-
-# AdGuard API auth (optional — empty means no auth, used by ingress dns sync)
-adguard_admin_password: "{{ vault_adguard_admin_password | default('') }}"
 
 porkbun_api_key: "{{ vault_porkbun_api_key }}"
 porkbun_secret_key: "{{ vault_porkbun_secret_key }}"

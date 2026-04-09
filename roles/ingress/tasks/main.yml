@@ -10,6 +10,3 @@
 
 - name: Configure Nginx Reverse Proxy
   ansible.builtin.include_tasks: nginx.yml
-
-- name: Sync AdGuard DNS Rewrites
-  ansible.builtin.include_tasks: adguard_sync.yml

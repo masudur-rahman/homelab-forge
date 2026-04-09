@@ -1,14 +1,21 @@
 ---
-# Sync AdGuard DNS rewrites so every ingress domain resolves to the portal VM.
-# Add/update only — entries not in ingress_sites are left untouched.
-- name: Build Desired DNS Rewrites
+# Sync AdGuard DNS rewrites from ingress_sites (→ portal VIP) and
+# adguard_extra_rewrites (arbitrary domain→IP mappings not fronted by nginx).
+# Add/update only — entries outside the desired domain set are left untouched.
+- name: Build Desired DNS Rewrites From Ingress Sites
   ansible.builtin.set_fact:
-    ingress_adguard_desired_rewrites: "{{ ingress_adguard_desired_rewrites | default([]) + [{'domain': item.domain, 'answer': ips.portal}] }}"
-  loop: "{{ ingress_sites }}"
+    adguard_desired_rewrites: "{{ (adguard_desired_rewrites | default([])) + [{'domain': item.domain, 'answer': ips.portal}] }}"
+  loop: "{{ ingress_sites | default([]) }}"
   loop_control:
     label: "{{ item.domain }}"
   run_once: true
-  tags: ingress
+  tags: [adguard, adguard-rewrites]
+
+- name: Append Extra DNS Rewrites
+  ansible.builtin.set_fact:
+    adguard_desired_rewrites: "{{ (adguard_desired_rewrites | default([])) + (adguard_extra_rewrites | default([])) }}"
+  run_once: true
+  tags: [adguard, adguard-rewrites]
 
 - name: Fetch Current AdGuard DNS Rewrites
   ansible.builtin.uri:
@@ -19,32 +26,25 @@
     force_basic_auth: true
     return_content: true
     status_code: 200
-  register: ingress_adguard_rewrites_current
+  register: adguard_rewrites_current
   run_once: true
-  tags: ingress
+  tags: [adguard, adguard-rewrites]
 
 - name: Compute Stale DNS Rewrites To Replace
   ansible.builtin.set_fact:
-    ingress_adguard_stale_rewrites: >-
-      {{ ingress_adguard_rewrites_current.json
-         | selectattr('domain', 'in', ingress_adguard_desired_rewrites | map(attribute='domain') | list)
-         | rejectattr('answer', 'equalto', ips.portal)
+    adguard_stale_rewrites: >-
+      {{ adguard_rewrites_current.json
+         | selectattr('domain', 'in', adguard_desired_rewrites | map(attribute='domain') | list)
+         | difference(adguard_desired_rewrites)
          | list }}
   run_once: true
-  tags: ingress
+  tags: [adguard, adguard-rewrites]
 
 - name: Compute Missing DNS Rewrites To Add
   ansible.builtin.set_fact:
-    ingress_adguard_missing_rewrites: >-
-      {{ ingress_adguard_desired_rewrites
-         | rejectattr('domain', 'in',
-             ingress_adguard_rewrites_current.json
-             | selectattr('answer', 'equalto', ips.portal)
-             | map(attribute='domain')
-             | list)
-         | list }}
+    adguard_missing_rewrites: "{{ adguard_desired_rewrites | difference(adguard_rewrites_current.json) | list }}"
   run_once: true
-  tags: ingress
+  tags: [adguard, adguard-rewrites]
 
 - name: Delete Stale DNS Rewrites
   ansible.builtin.uri:
@@ -56,11 +56,11 @@
     url_password: "{{ adguard_admin_password if adguard_admin_password else omit }}"
     force_basic_auth: true
     status_code: 200
-  loop: "{{ ingress_adguard_stale_rewrites }}"
+  loop: "{{ adguard_stale_rewrites }}"
   loop_control:
     label: "{{ item.domain }}"
   run_once: true
-  tags: ingress
+  tags: [adguard, adguard-rewrites]
 
 - name: Add DNS Rewrites
   ansible.builtin.uri:
@@ -72,8 +72,8 @@
     url_password: "{{ adguard_admin_password if adguard_admin_password else omit }}"
     force_basic_auth: true
     status_code: 200
-  loop: "{{ (ingress_adguard_stale_rewrites + ingress_adguard_missing_rewrites) | unique }}"
+  loop: "{{ adguard_missing_rewrites }}"
   loop_control:
     label: "{{ item.domain }}"
   run_once: true
-  tags: ingress
+  tags: [adguard, adguard-rewrites]

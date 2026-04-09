@@ -23,6 +23,16 @@ vpn_wireguard_clients:
 adguard_version: "v0.107.71"
 adguard_bind_ip: "0.0.0.0"
 adguard_port_dns: 53
+adguard_port_web: 3000
 adguard_upstreams:
   - "1.1.1.1"
   - "8.8.8.8"
+
+# AdGuard API auth (optional — empty means no auth, used by DNS rewrite sync)
+adguard_admin_user: admin
+adguard_admin_password: "{{ vault_adguard_admin_password | default('') }}"
+
+# Extra AdGuard DNS rewrites not fronted by nginx ingress
+adguard_extra_rewrites:
+  - { domain: data.mrahman.xyz, answer: "{{ ips.data }}" }
+  - { domain: cache.mrahman.xyz, answer: "{{ ips.data }}" }

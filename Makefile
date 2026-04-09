@@ -1,19 +1,24 @@
 # 🛠️ Project Forge Makefile
 
 # Default Environment
-ENV ?= infra
+env ?= infra
 
 # --- CONSTANTS ---
-INVENTORY_FILE := inventories/$(ENV)/hosts.ini
-VAULT_PASS_FILE := .vault_pass_$(ENV)
-ANSIBLE_FLAGS  := -i $(INVENTORY_FILE) -e @group_vars/all.yml -e @group_vars/$(ENV).yml -e @vault/$(ENV).yml --vault-password-file $(VAULT_PASS_FILE)
+INVENTORY_FILE := inventories/$(env)/hosts.ini
+VAULT_PASS_FILE := .vault_pass_$(env)
+ANSIBLE_FLAGS  := -i $(INVENTORY_FILE) -e @group_vars/all.yml -e @group_vars/$(env).yml -e @vault/$(env).yml --vault-password-file $(VAULT_PASS_FILE)
+
+# gateway play needs hostvars from compute inventory (for adguard DNS rewrite sync)
+GATEWAY_FLAGS := -i inventories/compute/hosts.ini $(ANSIBLE_FLAGS)
 
 ifdef tags
 	ANSIBLE_FLAGS += --tags $(tags)
+	GATEWAY_FLAGS += --tags $(tags)
 endif
 
 ifdef limit
 	ANSIBLE_FLAGS += --limit "$(limit)"
+	GATEWAY_FLAGS += --limit "$(limit)"
 endif
 
 # --- SSH ARGUMENT HACK ---
@@ -36,53 +41,53 @@ init: ## Install Galaxy collections
 	ansible-galaxy install -r collections/requirements.yml --force 2>/dev/null || true
 
 inventory: ## Generate dynamic inventory
-	@./scripts/render_inventory.sh $(ENV)
+	@./scripts/render_inventory.sh $(env)
 
 # --- VAULT MANAGEMENT ---
 
-vault-edit: ## Edit vault secrets (Usage: make vault-edit ENV=compute)
-	ansible-vault edit vault/$(ENV).yml --vault-password-file $(VAULT_PASS_FILE)
+vault-edit: ## Edit vault secrets (Usage: make vault-edit env=compute)
+	ansible-vault edit vault/$(env).yml --vault-password-file $(VAULT_PASS_FILE)
 
-vault-view: ## View vault secrets (Usage: make vault-view ENV=compute)
-	ansible-vault view vault/$(ENV).yml --vault-password-file $(VAULT_PASS_FILE)
+vault-view: ## View vault secrets (Usage: make vault-view env=compute)
+	ansible-vault view vault/$(env).yml --vault-password-file $(VAULT_PASS_FILE)
 
-vault-encrypt: ## Re-encrypt from decrypted file (Usage: make vault-encrypt ENV=compute)
-	ansible-vault encrypt vault/$(ENV).decrypted.yml --vault-password-file $(VAULT_PASS_FILE) --output vault/$(ENV).yml
-	@rm -f vault/$(ENV).decrypted.yml
-	@echo "Encrypted vault/$(ENV).decrypted.yml -> vault/$(ENV).yml (decrypted file removed)"
+vault-encrypt: ## Re-encrypt from decrypted file (Usage: make vault-encrypt env=compute)
+	ansible-vault encrypt vault/$(env).decrypted.yml --vault-password-file $(VAULT_PASS_FILE) --output vault/$(env).yml
+	@rm -f vault/$(env).decrypted.yml
+	@echo "Encrypted vault/$(env).decrypted.yml -> vault/$(env).yml (decrypted file removed)"
 
-vault-decrypt: ## Decrypt to a separate file for editing (Usage: make vault-decrypt ENV=compute)
-	ansible-vault decrypt vault/$(ENV).yml --vault-password-file $(VAULT_PASS_FILE) --output vault/$(ENV).decrypted.yml
-	@echo "Decrypted to vault/$(ENV).decrypted.yml (edit this file, then run make vault-encrypt)"
+vault-decrypt: ## Decrypt to a separate file for editing (Usage: make vault-decrypt env=compute)
+	ansible-vault decrypt vault/$(env).yml --vault-password-file $(VAULT_PASS_FILE) --output vault/$(env).decrypted.yml
+	@echo "Decrypted to vault/$(env).decrypted.yml (edit this file, then run make vault-encrypt)"
 
 # --- OPERATIONAL TASKS ---
 
 configure_host: ## Configure base system (User, SSH, etc)
-	@echo "⚙️  Configuring Hosts for [$(ENV)]..."
+	@echo "⚙️  Configuring Hosts for [$(env)]..."
 	ansible-playbook playbooks/configure_host.yml $(ANSIBLE_FLAGS)
 
 gateway: ## Deploy Gateway Stack (VPN + DNS + HA)
-	@echo "🛡️  Deploying Gateway Services to [$(ENV)]..."
-	ansible-playbook playbooks/gateway.yml $(ANSIBLE_FLAGS)
+	@echo "🛡️  Deploying Gateway Services to [$(env)]..."
+	ansible-playbook playbooks/gateway.yml $(GATEWAY_FLAGS)
 
 ingress: ## Setup Ingress Proxy (Nginx + SSL)
 	@echo "🚦 Deploying Ingress Controller..."
 	ansible-playbook playbooks/ingress.yml $(ANSIBLE_FLAGS)
 
 database:
-	@echo "Deploying Database to [$(ENV)]..."
+	@echo "Deploying Database to [$(env)]..."
 	ansible-playbook playbooks/database.yml $(ANSIBLE_FLAGS)
 
 expense_tracker: ## Deploy Expense Tracker Bot
-	@echo "🤖 Deploying Expense Tracker to [$(ENV)]..."
+	@echo "🤖 Deploying Expense Tracker to [$(env)]..."
 	ansible-playbook playbooks/expense_tracker.yml $(ANSIBLE_FLAGS)
 
 monitoring: ## Deploy Monitoring Stack + Agents
-	@echo "Deploying Monitoring to [$(ENV)]..."
+	@echo "Deploying Monitoring to [$(env)]..."
 	ansible-playbook playbooks/monitoring.yml $(ANSIBLE_FLAGS)
 
 ping: ## Connectivity Check (Works for Talos/No-Python)
-	@echo "📡 Pinging [$(ENV)] hosts..."
+	@echo "📡 Pinging [$(env)] hosts..."
 	ansible-playbook playbooks/ping.yml $(ANSIBLE_FLAGS)
 
 ifeq (ssh,$(firstword $(MAKECMDGOALS)))
@@ -91,14 +96,14 @@ ifeq (ssh,$(firstword $(MAKECMDGOALS)))
 endif
 
 ssh: ## SSH into a host (Usage: make ssh gateway-01)
-	@ENV="$(ENV)" SEARCH_QUERY="$(SSH_SEARCH_TERM)" ./scripts/ssh_connect.sh $(ANSIBLE_FLAGS)
+	@ENV="$(env)" SEARCH_QUERY="$(SSH_SEARCH_TERM)" ./scripts/ssh_connect.sh $(ANSIBLE_FLAGS)
 
 # --- CI / QA ---
 
 PLAYBOOKS := $(wildcard playbooks/*.yml)
 
 check: ## Dry-run syntax check all playbooks
-	@echo "🔍 Syntax Check for [$(ENV)]..."
+	@echo "🔍 Syntax Check for [$(env)]..."
 	@for pb in $(PLAYBOOKS); do \
 		echo "  Checking $$pb..."; \
 		ansible-playbook $$pb $(ANSIBLE_FLAGS) --syntax-check; \

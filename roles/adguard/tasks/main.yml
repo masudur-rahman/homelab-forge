@@ -10,3 +10,7 @@
 
 - name: Setup HA Monitoring
   ansible.builtin.include_tasks: ha.yml
+
+- name: Sync DNS Rewrites
+  ansible.builtin.include_tasks: rewrites.yml
+  tags: [adguard, adguard-rewrites]

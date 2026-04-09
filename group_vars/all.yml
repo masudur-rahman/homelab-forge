@@ -32,6 +32,22 @@ primary_dns: "{{ ips.adguard }}"
 fallback_dns: "1.1.1.1"
 search_domain: "mrahman.xyz"
 
-# AdGuard (shared across envs — needed by ingress sync from compute)
-adguard_port_web: 3000
-adguard_admin_user: admin
+# Ingress (Nginx Reverse Proxy) — env-agnostic domain map
+ingress_root_domain: "mrahman.xyz"
+ingress_cert_email: "masudjuly02@gmail.com"
+ingress_sites:
+  - domain: "gateway.mrahman.xyz"
+    upstream: "http://{{ ips.router }}"
+    force_ip_header: true
+  - domain: "proxmox.mrahman.xyz"
+    upstream: "https://{{ ips.proxmox }}:8006"
+    websocket: true
+  - domain: "adguard.mrahman.xyz"
+    upstream: "http://{{ ips.adguard }}:3000"
+    websocket: false
+  - domain: "status.mrahman.xyz"
+    upstream: "http://{{ ips.monitoring }}:3001"
+    websocket: true
+  - domain: "netdata.mrahman.xyz"
+    upstream: "http://{{ ips.monitoring }}:19999"
+    websocket: false
