@@ -1,5 +1,18 @@
-bind_host: {{ adguard_bind_ip }}
-bind_port: {{ adguard_port_web }}
+# {{ ansible_managed | default('# Managed by Ansible') }}
+http:
+  pprof:
+    port: 6060
+    enabled: false
+  address: {{ adguard_bind_ip }}:{{ adguard_port_web }}
+  session_ttl: 240h
+users:
+  - name: {{ adguard_admin_user }}
+    password: {{ _admin_password_hash }}
+auth_attempts: 5
+block_auth_min: 15
+http_proxy: ""
+language: ""
+theme: auto
 dns:
   bind_hosts:
     - {{ adguard_bind_ip }}
@@ -10,5 +23,41 @@ dns:
 {% endfor %}
   protection_enabled: true
   blocking_mode: default
-  # Allow requests from everywhere (VIP, VPN, LAN)
   allowed_clients: []
+  disallowed_clients: []
+  blocked_hosts:
+    - version.bind
+    - id.server
+    - hostname.bind
+querylog:
+  enabled: true
+  file_enabled: true
+  interval: 720h
+  size_memory: 1000
+  ignored: []
+statistics:
+  enabled: true
+  interval: 720h
+  ignored: []
+filters: []
+whitelist_filters: []
+user_rules: []
+dhcp:
+  enabled: false
+clients:
+  runtime_sources:
+    whois: true
+    arp: true
+    rdns: true
+    dhcp: true
+    hosts: true
+  persistent: []
+log:
+  file: ""
+  max_backups: 0
+  max_size: 100
+  max_age: 3
+  compress: false
+  local_time: false
+  verbose: false
+schema_version: 33

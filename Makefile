@@ -21,6 +21,12 @@ ifdef limit
 	GATEWAY_FLAGS += --limit "$(limit)"
 endif
 
+# Custom flags passthrough (e.g., make gateway flags="--check --diff")
+ifdef flags
+	ANSIBLE_FLAGS += $(flags)
+	GATEWAY_FLAGS += $(flags)
+endif
+
 # --- SSH ARGUMENT HACK ---
 # This allows "make ssh gateway-01" by turning the argument into a dummy target
 ifeq (ssh,$(firstword $(MAKECMDGOALS)))

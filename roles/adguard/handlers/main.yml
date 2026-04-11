@@ -1,5 +1,12 @@
 ---
 - name: Restart AdGuard
-  ansible.builtin.service:
+  ansible.builtin.systemd:
     name: adguard
     state: restarted
+    daemon_reload: true
+
+- name: Reload systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    state: reloaded
+  failed_when: false

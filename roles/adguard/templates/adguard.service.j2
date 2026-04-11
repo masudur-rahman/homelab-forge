@@ -1,0 +1,38 @@
+# {{ ansible_managed }}
+[Unit]
+Description=AdGuard Home - Network-wide ads & tracker blocking DNS sinkhole
+After=network.target network-online.target
+Wants=network-online.target
+{% if ha_enabled | default(false) %}
+PartOf=keepalived.service
+{% endif %}
+
+[Service]
+Type=simple
+ExecStart=/opt/adguard/AdGuardHome -c /opt/adguard/AdGuardHome.yaml -w /opt/adguard
+Restart=on-failure
+RestartSec=5s
+WorkingDirectory=/opt/adguard
+User=adguard
+Group=adguard
+
+# Security hardening (Linux >= 4.8)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/adguard
+PrivateTmp=true
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_RAW
+AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_RAW
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=adguard
+
+[Install]
+WantedBy=multi-user.target

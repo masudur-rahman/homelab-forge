@@ -1,40 +1,45 @@
 ---
-- name: Deploy AdGuard Config
+- name: Install systemd service unit
   ansible.builtin.template:
-    src: AdGuardHome.yaml.j2
-    dest: /opt/adguard/AdGuardHome.yaml
-    mode: '0644'
-    force: false
-  notify: Restart AdGuard
-
-- name: Install Systemd Service
-  ansible.builtin.copy:
+    src: adguard.service.j2
     dest: /etc/systemd/system/adguard.service
     mode: '0644'
-    content: |
-      [Unit]
-      Description=AdGuard Home
-      After=network.target
-      [Service]
-      ExecStart=/opt/adguard/AdGuardHome -c /opt/adguard/AdGuardHome.yaml -w /opt/adguard
-      Restart=always
-      WorkingDirectory=/opt/adguard
-      [Install]
-      WantedBy=multi-user.target
+#    validate: 'systemd-analyze verify %s'
+    backup: "{{ adguard_backup_configs | default(true) }}"
   notify: Restart AdGuard
 
-- name: Start AdGuard
-  ansible.builtin.service:
+- name: Start and enable AdGuard service
+  ansible.builtin.systemd:
     name: adguard
     state: started
     enabled: true
+    daemon_reload: true
 
-- name: Configure Production resolv.conf
-  ansible.builtin.copy:
-    dest: /etc/resolv.conf
-    content: |
-      # Ansible Managed: Production DNS Configuration
+- name: Flush handlers so pending restarts apply before health check
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for AdGuard DNS port to be listening
+  ansible.builtin.wait_for:
+    port: "{{ adguard_port_dns }}"
+    host: 127.0.0.1
+    timeout: 30
+  when: adguard_wait_for_port | default(true)
+  check_mode: false
+
+- name: Configure DNS resolution safely (blockinfile)
+  ansible.builtin.blockinfile:
+    path: /etc/resolv.conf
+    marker: "# {mark} ANSIBLE MANAGED - AdGuard DNS"
+    block: |
       nameserver 127.0.0.1
-      nameserver {{ fallback_dns | default('1.1.1.1') }}
+      {% if fallback_dns | default('') %}
+      nameserver {{ fallback_dns }}
+      {% endif %}
+      {% if search_domain | default('') %}
       search {{ search_domain }}
+      {% endif %}
+    insertafter: EOF
+    backup: true
+    create: true
     mode: '0644'
+  notify: Reload systemd-resolved

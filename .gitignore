@@ -7,3 +7,4 @@ files/wireguard
 .claude/plan.md
 .vault_pass_*
 vault/*.decrypted.yml
+action_plugins/__pycache__/

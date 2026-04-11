@@ -1,0 +1,121 @@
+---
+- name: Ensure python3-bcrypt is installed
+  ansible.builtin.apt:
+    name: python3-bcrypt
+    state: present
+    update_cache: false
+  check_mode: false
+
+# Stop AdGuard before reading config to prevent race conditions:
+# 1. AdGuard flushes its in-memory state to disk on shutdown
+# 2. No risk of AdGuard overwriting our changes while we write
+- name: Check if AdGuard service exists
+  ansible.builtin.stat:
+    path: /etc/systemd/system/adguard.service
+  register: adguard_service_file
+
+- name: Stop AdGuard before config update
+  ansible.builtin.systemd:
+    name: adguard
+    state: stopped
+  when: adguard_service_file.stat.exists
+
+- name: Read existing config (if any)
+  ansible.builtin.slurp:
+    src: /opt/adguard/AdGuardHome.yaml
+  register: adguard_config_slurp
+  failed_when: false
+  check_mode: false
+
+- name: Parse live config
+  ansible.builtin.set_fact:
+    adguard_live_config: >-
+      {{ (adguard_config_slurp.content | b64decode | from_yaml)
+         if (adguard_config_slurp.content is defined and adguard_config_slurp.content | length > 0)
+         else {} }}
+
+- name: Extract current admin hash
+  ansible.builtin.set_fact:
+    adguard_current_hash: >-
+      {{ adguard_live_config.users | default([])
+         | selectattr('name', 'equalto', adguard_admin_user)
+         | map(attribute='password')
+         | first | default('') }}
+
+- name: Compute final admin hash (idempotent)
+  adguard_bcrypt_hash:
+    password: "{{ adguard_admin_password }}"
+    current_hash: "{{ adguard_current_hash }}"
+  register: adguard_bcrypt_result
+  no_log: true
+  check_mode: false
+
+- name: Build Ansible-managed config overlay
+  ansible.builtin.set_fact:
+    adguard_config_overlay:
+      http:
+        pprof:
+          port: 6060
+          enabled: false
+        address: "{{ adguard_bind_ip }}:{{ adguard_port_web }}"
+        session_ttl: 240h
+      users:
+        - name: "{{ adguard_admin_user }}"
+          password: "{{ adguard_bcrypt_result.hash }}"
+      auth_attempts: 5
+      block_auth_min: 15
+      http_proxy: ""
+      language: ""
+      theme: auto
+      dns:
+        bind_hosts:
+          - "{{ adguard_bind_ip }}"
+        port: "{{ adguard_port_dns }}"
+        upstream_dns: "{{ adguard_upstreams }}"
+      querylog:
+        enabled: true
+        file_enabled: true
+        interval: 720h
+        size_memory: 1000
+        ignored: []
+      statistics:
+        enabled: true
+        interval: 720h
+        ignored: []
+      log:
+        file: ""
+        max_backups: 0
+        max_size: 100
+        max_age: 3
+        compress: false
+        local_time: false
+        verbose: false
+      schema_version: 33
+  no_log: true
+
+# First deploy: overlay is the full config
+# Subsequent runs: merge overlay into live config (preserves filters, rules, clients, etc.)
+- name: Merge config (preserve runtime state)
+  ansible.builtin.set_fact:
+    adguard_final_config: >-
+      {{ (adguard_live_config | combine(adguard_config_overlay, recursive=true))
+         if (adguard_live_config | length > 0)
+         else adguard_config_overlay }}
+  no_log: true
+
+- name: Write AdGuard config
+  ansible.builtin.copy:
+    content: "{{ adguard_final_config | to_nice_yaml(indent=2, sort_keys=false) }}"
+    dest: /opt/adguard/AdGuardHome.yaml
+    owner: adguard
+    group: adguard
+    mode: '0644'
+    validate: 'python3 -c "import yaml; yaml.safe_load(open(\"%s\"))"'
+#  no_log: true
+
+# Always start AdGuard back — whether config changed or not
+- name: Start AdGuard after config update
+  ansible.builtin.systemd:
+    name: adguard
+    state: started
+  when: adguard_service_file.stat.exists

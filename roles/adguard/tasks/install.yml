@@ -1,46 +1,63 @@
 ---
-- name: Check installed AdGuard version
+- name: Create system group
+  ansible.builtin.group:
+    name: adguard
+    system: true
+
+- name: Create system user
+  ansible.builtin.user:
+    name: adguard
+    group: adguard
+    system: true
+    shell: /usr/sbin/nologin
+    home: /opt/adguard
+    create_home: false
+
+- name: Create installation directory
+  ansible.builtin.file:
+    path: /opt/adguard
+    state: directory
+    owner: adguard
+    group: adguard
+    mode: '0755'
+
+- name: Check if AdGuard binary exists and get version
   ansible.builtin.command: /opt/adguard/AdGuardHome --version
   register: adguard_installed_version
   changed_when: false
   failed_when: false
+  check_mode: false
 
-- name: Determine if install/upgrade is needed
-  ansible.builtin.set_fact:
-    adguard_needs_install: >-
-      {{ adguard_installed_version.rc != 0 or
-         adguard_version not in adguard_installed_version.stdout }}
-
-- name: Installation Block
-  when: adguard_needs_install
+- name: Download and extract when version mismatch or missing
+  when: >
+    adguard_installed_version.rc != 0 or
+    adguard_version not in adguard_installed_version.stdout
   block:
-    - name: Create AdGuard Directory
-      ansible.builtin.file:
-        path: /opt/adguard
-        state: directory
-        mode: '0755'
+    - name: Download tarball
+      ansible.builtin.get_url:
+        url: "https://github.com/AdguardTeam/AdGuardHome/releases/download/{{ adguard_version }}/AdGuardHome_linux_amd64.tar.gz"
+        dest: /tmp/AdGuardHome.tar.gz
+        mode: '0644'
 
-    - name: Create Temp Install Dir
-      ansible.builtin.file:
-        path: /tmp/adguard_install
-        state: directory
-        mode: '0755'
-
-    - name: Download AdGuard Release
+    - name: Extract AdGuard binary
       ansible.builtin.unarchive:
-        src: "https://github.com/AdguardTeam/AdGuardHome/releases/download/{{ adguard_version }}/AdGuardHome_linux_amd64.tar.gz"
-        dest: /tmp/adguard_install
+        src: /tmp/AdGuardHome.tar.gz
+        dest: /opt/adguard
         remote_src: true
+        extra_opts: [--strip-components=2]
+        creates: /opt/adguard/AdGuardHome
 
-    - name: Install/Upgrade Binary
-      ansible.builtin.copy:
-        src: /tmp/adguard_install/AdGuardHome/AdGuardHome
-        dest: /opt/adguard/AdGuardHome
-        mode: '0755'
-        remote_src: true
-      notify: Restart AdGuard
+- name: Ensure correct ownership
+  ansible.builtin.file:
+    path: /opt/adguard
+    state: directory
+    owner: adguard
+    group: adguard
+    recurse: true
 
-    - name: Cleanup Temp Files
-      ansible.builtin.file:
-        path: /tmp/adguard_install
-        state: absent
+- name: Ensure binary is executable
+  ansible.builtin.file:
+    path: /opt/adguard/AdGuardHome
+    mode: '0755'
+    owner: adguard
+    group: adguard
