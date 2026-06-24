@@ -1,0 +1,7 @@
+---
+# Disk resize settings
+configure_host_resize_disk_device: sda
+configure_host_resize_disk_partition: 1
+
+# Reboot settings
+configure_host_reboot_timeout: 300

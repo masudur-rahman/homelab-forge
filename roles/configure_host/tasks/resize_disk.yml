@@ -1,0 +1,38 @@
+---
+- name: Install cloud-guest-utils for growpart
+  ansible.builtin.apt:
+    name: cloud-guest-utils
+    state: present
+
+- name: Grow partition to fill available disk space
+  ansible.builtin.command:
+    cmd: >-
+      growpart /dev/{{ configure_host_resize_disk_device }}
+      {{ configure_host_resize_disk_partition }}
+  register: configure_host_growpart_result
+  changed_when: configure_host_growpart_result.rc == 0
+  failed_when: configure_host_growpart_result.rc not in [0, 1]
+
+- name: Detect filesystem type
+  ansible.builtin.command:
+    cmd: >-
+      blkid -s TYPE -o value
+      /dev/{{ configure_host_resize_disk_device }}{{ configure_host_resize_disk_partition }}
+  register: configure_host_fs_type
+  changed_when: false
+
+- name: Resize ext4 filesystem
+  ansible.builtin.command:
+    cmd: >-
+      resize2fs
+      /dev/{{ configure_host_resize_disk_device }}{{ configure_host_resize_disk_partition }}
+  when: configure_host_fs_type.stdout == 'ext4'
+  register: configure_host_resize_ext4
+  changed_when: "'Nothing to do' not in configure_host_resize_ext4.stderr"
+
+- name: Resize XFS filesystem
+  ansible.builtin.command:
+    cmd: "xfs_growfs /"
+  when: configure_host_fs_type.stdout == 'xfs'
+  register: configure_host_resize_xfs
+  changed_when: "'data blocks changed' in configure_host_resize_xfs.stdout"

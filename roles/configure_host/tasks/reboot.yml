@@ -1,0 +1,9 @@
+---
+- name: Reboot the host
+  ansible.builtin.reboot:
+    reboot_timeout: "{{ configure_host_reboot_timeout }}"
+
+- name: Wait for host to come back online
+  ansible.builtin.wait_for_connection:
+    delay: 10
+    timeout: "{{ configure_host_reboot_timeout }}"

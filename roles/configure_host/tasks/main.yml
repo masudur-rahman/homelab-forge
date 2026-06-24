@@ -14,3 +14,21 @@
   ansible.builtin.include_tasks: docker.yml
   tags:
     - docker
+
+- name: Resize Disk Partition and Filesystem
+  ansible.builtin.import_tasks: resize_disk.yml
+  tags:
+    - never
+    - resize_disk
+
+- name: Reboot Host
+  ansible.builtin.import_tasks: reboot.yml
+  tags:
+    - never
+    - reboot
+
+- name: Cleanup System Resources
+  ansible.builtin.import_tasks: cleanup.yml
+  tags:
+    - never
+    - cleanup
