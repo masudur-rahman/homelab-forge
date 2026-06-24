@@ -1,0 +1,19 @@
+---
+- name: Prune unused Docker images
+  community.docker.docker_prune:
+    images: true
+    images_filters:
+      dangling: false
+
+- name: Prune stopped containers
+  community.docker.docker_prune:
+    containers: true
+
+- name: Prune unused networks
+  community.docker.docker_prune:
+    networks: true
+
+- name: Prune dangling volumes
+  community.docker.docker_prune:
+    volumes: true
+  when: cleanup_prune_volumes

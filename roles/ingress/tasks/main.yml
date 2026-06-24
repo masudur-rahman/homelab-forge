@@ -16,3 +16,9 @@
   ansible.builtin.include_tasks: nginx.yml
   tags:
     - ingress_nginx
+
+- name: Cleanup Nginx Logs and Stale Certs
+  ansible.builtin.import_tasks: cleanup.yml
+  tags:
+    - never
+    - cleanup

@@ -1,0 +1,12 @@
+---
+- name: Remove old AdGuard query log backups
+  ansible.builtin.shell:
+    cmd: "find /opt/adguardhome/data -name 'querylog.json.*.gz' -mtime +{{ cleanup_log_retention_days }} -delete 2>/dev/null || true"
+    executable: /bin/bash
+  changed_when: false
+
+- name: Remove old AdGuard filter cache
+  ansible.builtin.shell:
+    cmd: "find /opt/adguardhome/data/filters -name '*.txt' -mtime +{{ cleanup_log_retention_days }} -delete 2>/dev/null || true"
+    executable: /bin/bash
+  changed_when: false

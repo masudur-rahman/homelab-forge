@@ -1,0 +1,18 @@
+---
+- name: Truncate old Nginx access logs
+  ansible.builtin.shell:
+    cmd: >-
+      find /var/log/nginx -name '*.log.*.gz'
+      -mtime +{{ cleanup_log_retention_days }} -delete
+    executable: /bin/bash
+  register: ingress_log_cleanup
+  changed_when: ingress_log_cleanup.rc == 0
+
+- name: Remove stale SSL certificate backups
+  ansible.builtin.shell:
+    cmd: >-
+      find /etc/letsencrypt/archive -name '*.pem'
+      -mtime +{{ cleanup_cert_backup_retention_days }}
+      -delete 2>/dev/null || true
+    executable: /bin/bash
+  changed_when: false

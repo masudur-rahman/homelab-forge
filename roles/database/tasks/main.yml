@@ -39,3 +39,9 @@
       --appendonly yes
       --maxmemory-policy noeviction
       --requirepass "{{ redis_password }}"
+
+- name: Cleanup Docker Resources
+  ansible.builtin.import_tasks: cleanup.yml
+  tags:
+    - never
+    - cleanup

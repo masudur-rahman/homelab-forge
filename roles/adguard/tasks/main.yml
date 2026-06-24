@@ -57,3 +57,9 @@
   check_mode: false
   tags:
     - adguard_health
+
+- name: Cleanup AdGuard Stale Data
+  ansible.builtin.import_tasks: cleanup.yml
+  tags:
+    - never
+    - cleanup

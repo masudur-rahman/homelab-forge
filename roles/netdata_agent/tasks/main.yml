@@ -28,3 +28,9 @@
     project_src: /opt/netdata
     state: present
     pull: always
+
+- name: Cleanup Docker Resources
+  ansible.builtin.import_tasks: cleanup.yml
+  tags:
+    - never
+    - cleanup

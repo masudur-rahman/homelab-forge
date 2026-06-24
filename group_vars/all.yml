@@ -51,3 +51,8 @@ ingress_sites:
   - domain: "netdata.mrahman.xyz"
     upstream: "http://{{ ips.monitoring }}:19999"
     websocket: false
+
+# Cleanup settings (used by cleanup tasks with tags: [never, cleanup])
+cleanup_prune_volumes: true
+cleanup_log_retention_days: 30
+cleanup_cert_backup_retention_days: 90

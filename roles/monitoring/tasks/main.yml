@@ -76,3 +76,9 @@
   ansible.builtin.command:
     cmd: "docker restart uptime-kuma"
   changed_when: true
+
+- name: Cleanup Docker Resources
+  ansible.builtin.import_tasks: cleanup.yml
+  tags:
+    - never
+    - cleanup
