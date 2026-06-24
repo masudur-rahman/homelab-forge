@@ -51,6 +51,15 @@ ingress_sites:
   - domain: "netdata.mrahman.xyz"
     upstream: "http://{{ ips.monitoring }}:19999"
     websocket: false
+  - domain: "expense.mrahman.xyz"
+    upstream: "http://{{ ips.expense_tracker}}:65262"
+    websocket: false
+  - domain: "expense-api.mrahman.xyz"
+    upstream: "http://{{ ips.expense_tracker}}:6336"
+    websocket: false
+  - domain: "family.mrahman.xyz"
+    upstream: "http://{{ ips.expense_tracker}}:5294"
+    websocket: false
 
 # Cleanup settings (used by cleanup tasks with tags: [never, cleanup])
 cleanup_prune_volumes: true

@@ -1,0 +1,33 @@
+telegram:
+  user: {{ expense_bot_user }}
+
+database:
+  type: postgres
+  postgres:
+    name: {{ expense_db_name }}
+    host: {{ expense_db_host }}
+    port: {{ expense_db_port }}
+    user: {{ expense_db_user }}
+    password: {{ expense_db_pass }}
+    sslmode: disable
+
+cache:
+  type: {{ expense_cache_type }}
+  redis:
+    host: {{ expense_redis_host }}
+    port: "{{ expense_redis_port }}"
+    password: {{ expense_redis_pass }}
+
+system:
+  pdfGenerator: "{{ expene_system_pdfGenerator }}"
+  aiGenerator: "{{ expene_system_aiGenerator }}"
+
+server:
+  dashboardEnabled: true
+  jwtSecret: "{{ expense_server_jwtSecret }}"
+  refreshSecret: "{{ expense_server_refreshSecret }}"
+  botUsername: "{{ expense_server_botUsername }}"
+  corsOrigin: "{{ expense_server_corsOrigin }}"
+  port: {{ expense_server_port }}
+  baseURL: "{{ expense_server_baseURL }}"
+  dashboardURL: "{{ expense_server_dashboardURL }}"

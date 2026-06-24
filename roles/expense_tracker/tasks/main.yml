@@ -15,8 +15,15 @@
 
 - name: Deploy App Configuration
   ansible.builtin.template:
-    src: config.yaml.j2
-    dest: /opt/expense-tracker/config.yaml
+    src: backend-config.yaml.j2
+    dest: /opt/expense-tracker/backend-config.yaml
+    mode: '0644'
+  notify: Restart Expense Tracker
+
+- name: Deploy Expense Tracker Dashboard Configuration
+  ansible.builtin.template:
+    src: dashboard-config.json.j2
+    dest: /opt/expense-tracker/dashboard-config.json
     mode: '0644'
   notify: Restart Expense Tracker
 
@@ -32,3 +39,9 @@
     project_src: /opt/expense-tracker
     state: present
     pull: always
+
+- name: Cleanup Docker Resources
+  ansible.builtin.import_tasks: cleanup.yml
+  tags:
+    - never
+    - cleanup
