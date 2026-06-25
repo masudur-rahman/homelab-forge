@@ -1,0 +1,33 @@
+---
+# Required CLI tools on the Ansible controller (assert-only; not auto-installed)
+k8s_platform_required_bins:
+  - kubectl
+  - helm
+  - flux
+  - sops
+  - age
+
+# Base domain used for Gateway listeners / HTTPRoute hostnames
+k8s_platform_base_domain: mrahman.xyz
+
+# Namespaces for platform components
+k8s_platform_cert_manager_namespace: cert-manager
+k8s_platform_monitoring_namespace: monitoring
+k8s_platform_logging_namespace: logging
+k8s_platform_gateway_namespace: gateway
+k8s_platform_flux_namespace: flux-system
+
+# Pinned third-party chart / CRD versions (installed by Ansible).
+# NOTE: verify/bump these to current releases before applying.
+k8s_platform_gateway_api_version: v1.2.1
+k8s_platform_cert_manager_version: v1.16.2
+k8s_platform_kube_prometheus_stack_version: "67.4.0"
+k8s_platform_loki_version: "6.24.0"
+k8s_platform_alloy_version: "0.10.1"
+k8s_platform_flux_version: "2.14.1"
+
+# GitOps source — personal/modified manifests live in the helm-charts repo
+# (monorepo for now). Flux reconciles the path below.
+k8s_platform_flux_git_url: https://github.com/masudur-rahman/helm-charts
+k8s_platform_flux_git_branch: main
+k8s_platform_flux_git_path: ./clusters/olympus

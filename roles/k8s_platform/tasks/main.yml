@@ -1,0 +1,11 @@
+---
+- name: Run preflight checks
+  ansible.builtin.import_tasks: preflight.yml
+  tags:
+    - always
+
+# Phases added incrementally (each touches the live cluster):
+#   gateway_api.yml   — Gateway API CRDs (GatewayClass + routes live in gitops repo)
+#   cert_manager.yml  — cert-manager + Porkbun DNS-01 webhook charts
+#   monitoring.yml    — kube-prometheus-stack + Loki + Alloy charts
+#   flux.yml          — Flux + sops-age secret + GitRepository + root Kustomization

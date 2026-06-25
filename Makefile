@@ -35,7 +35,7 @@ ifeq (ssh,$(firstword $(MAKECMDGOALS)))
   $(eval $(SSH_HOST):;@:)
 endif
 
-.PHONY: help init inventory vpn configure_host expense_tracker monitoring ping check lint ssh vault-edit vault-view vault-encrypt vault-decrypt
+.PHONY: help init inventory vpn configure_host expense_tracker monitoring k8s_platform ping check lint ssh vault-edit vault-view vault-encrypt vault-decrypt
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -91,6 +91,10 @@ expense_tracker: ## Deploy Expense Tracker Bot
 monitoring: ## Deploy Monitoring Stack + Agents
 	@echo "Deploying Monitoring to [$(env)]..."
 	ansible-playbook playbooks/monitoring.yml $(ANSIBLE_FLAGS)
+
+k8s_platform: ## Ready the k8s cluster (Gateway API, cert-manager, observability, Flux). Usage: make k8s_platform env=compute
+	@echo "☸️  Readying k8s platform on [olympus]..."
+	ansible-playbook playbooks/k8s_platform.yml $(ANSIBLE_FLAGS) --limit k8s
 
 ping: ## Connectivity Check (Works for Talos/No-Python)
 	@echo "📡 Pinging [$(env)] hosts..."

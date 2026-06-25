@@ -1,0 +1,43 @@
+---
+- name: Ensure required CLI tools are present on the controller
+  ansible.builtin.command: "which {{ item }}"
+  loop: "{{ k8s_platform_required_bins }}"
+  loop_control:
+    label: "{{ item }}"
+  register: k8s_platform_bin_check
+  changed_when: false
+  failed_when: k8s_platform_bin_check.rc != 0
+
+- name: Stat the kubeconfig file
+  ansible.builtin.stat:
+    path: "{{ kubeconfig | default('') }}"
+  register: k8s_platform_kubeconfig_stat
+
+- name: Assert kubeconfig is available
+  ansible.builtin.assert:
+    that:
+      - kubeconfig is defined
+      - kubeconfig | length > 0
+      - k8s_platform_kubeconfig_stat.stat.exists
+    fail_msg: >-
+      kubeconfig not found at '{{ kubeconfig | default("<undefined>") }}'.
+      Run 'make inventory env=compute' to copy it from homelab-genesis.
+    success_msg: "kubeconfig present at {{ kubeconfig }}"
+
+- name: Assert SOPS age key is available
+  ansible.builtin.assert:
+    that:
+      - vault_olympus_age_key is defined
+      - vault_olympus_age_key | length > 0
+    fail_msg: "vault_olympus_age_key is missing from vault/compute.yml"
+    success_msg: "SOPS age key present"
+
+- name: Fetch cluster nodes
+  kubernetes.core.k8s_info:
+    kubeconfig: "{{ kubeconfig }}"
+    kind: Node
+  register: k8s_platform_nodes
+
+- name: Report cluster readiness
+  ansible.builtin.debug:
+    msg: "olympus reachable — {{ k8s_platform_nodes.resources | length }} node(s) found"
