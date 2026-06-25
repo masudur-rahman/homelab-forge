@@ -1,6 +1,7 @@
 .ansible
 collections/ansible_collections
 files/wireguard
+inventories/*/files/
 .idea
 .qodo
 .claude/settings.local.json
