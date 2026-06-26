@@ -1,0 +1,37 @@
+---
+# Gateway API standard-channel CRDs. Cilium runs as the controller
+# (gatewayAPI.enabled=true set in homelab-genesis); CRDs must exist first.
+# GatewayClass, Gateway, and HTTPRoutes are reconciled from the gitops repo.
+- name: Create a temp dir for Gateway API manifests
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: gwapi
+  register: k8s_platform_gwapi_tmp
+  changed_when: false
+  tags:
+    - gateway_api
+
+- name: Download Gateway API standard-channel CRDs
+  ansible.builtin.get_url:
+    url: >-
+      https://github.com/kubernetes-sigs/gateway-api/releases/download/{{ k8s_platform_gateway_api_version }}/standard-install.yaml
+    dest: "{{ k8s_platform_gwapi_tmp.path }}/standard-install.yaml"
+    mode: "0644"
+  tags:
+    - gateway_api
+
+- name: Apply Gateway API CRDs
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present
+    src: "{{ k8s_platform_gwapi_tmp.path }}/standard-install.yaml"
+  tags:
+    - gateway_api
+
+- name: Remove the temp dir
+  ansible.builtin.file:
+    path: "{{ k8s_platform_gwapi_tmp.path }}"
+    state: absent
+  changed_when: false
+  tags:
+    - gateway_api

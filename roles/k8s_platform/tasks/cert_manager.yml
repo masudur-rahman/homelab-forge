@@ -1,0 +1,43 @@
+---
+# cert-manager + Porkbun DNS-01 webhook solver. ClusterIssuer, Certificate,
+# and the SOPS-encrypted Porkbun credentials live in the gitops repo.
+- name: Add Helm chart repositories
+  kubernetes.core.helm_repository:
+    name: "{{ item.name }}"
+    repo_url: "{{ item.url }}"
+  loop: "{{ k8s_platform_helm_repos }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags:
+    - cert_manager
+
+- name: Install cert-manager
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig }}"
+    name: cert-manager
+    chart_ref: jetstack/cert-manager
+    chart_version: "{{ k8s_platform_cert_manager_version }}"
+    release_namespace: "{{ k8s_platform_cert_manager_namespace }}"
+    create_namespace: true
+    wait: true
+    values:
+      crds:
+        enabled: true
+  tags:
+    - cert_manager
+
+- name: Install the Porkbun DNS-01 webhook solver
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig }}"
+    name: cert-manager-webhook-porkbun
+    chart_ref: cert-manager-webhook-porkbun/cert-manager-webhook-porkbun
+    chart_version: "{{ k8s_platform_porkbun_webhook_version }}"
+    release_namespace: "{{ k8s_platform_cert_manager_namespace }}"
+    wait: true
+    values:
+      groupName: "{{ k8s_platform_porkbun_webhook_group_name }}"
+      certManager:
+        namespace: "{{ k8s_platform_cert_manager_namespace }}"
+        serviceAccountName: cert-manager
+  tags:
+    - cert_manager

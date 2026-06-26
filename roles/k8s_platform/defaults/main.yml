@@ -1,11 +1,22 @@
 ---
-# Required CLI tools on the Ansible controller (assert-only; not auto-installed)
-k8s_platform_required_bins:
-  - kubectl
+# Required CLI tools on the Ansible controller, installed via Homebrew (macOS).
+# Taps needed before the tapped formulae below can be installed.
+k8s_platform_brew_taps:
+  - fluxcd/tap
+
+# Homebrew formulae (kubernetes-cli provides kubectl; fluxcd/tap/flux is the CNCF flux CLI).
+k8s_platform_brew_formulae:
+  - kubernetes-cli
   - helm
-  - flux
+  - fluxcd/tap/flux
   - sops
   - age
+
+# Python libraries needed on the controller: 'packaging' is required by the
+# ansible pip module itself; 'kubernetes' by the kubernetes.core modules.
+k8s_platform_pip_packages:
+  - packaging
+  - kubernetes
 
 # Base domain used for Gateway listeners / HTTPRoute hostnames
 k8s_platform_base_domain: mrahman.xyz
@@ -21,10 +32,23 @@ k8s_platform_flux_namespace: flux-system
 # NOTE: verify/bump these to current releases before applying.
 k8s_platform_gateway_api_version: v1.2.1
 k8s_platform_cert_manager_version: v1.16.2
+k8s_platform_porkbun_webhook_version: "1.0.0"
 k8s_platform_kube_prometheus_stack_version: "67.4.0"
 k8s_platform_loki_version: "6.24.0"
 k8s_platform_alloy_version: "0.10.1"
 k8s_platform_flux_version: "2.14.1"
+
+# Helm chart repositories (third-party charts installed as-is by Ansible)
+k8s_platform_helm_repos:
+  - name: jetstack
+    url: https://charts.jetstack.io
+  - name: cert-manager-webhook-porkbun
+    url: https://talinx.github.io/cert-manager-webhook-porkbun
+
+# cert-manager Porkbun DNS-01 webhook solver groupName.
+# Must match the ClusterIssuer webhook solver groupName in the gitops repo
+# (clusters/olympus/infrastructure/cluster-issuer.yaml).
+k8s_platform_porkbun_webhook_group_name: porkbun.talinx.dev
 
 # GitOps source — personal/modified manifests live in the helm-charts repo
 # (monorepo for now). Flux reconciles the path below.

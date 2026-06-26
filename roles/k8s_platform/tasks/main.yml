@@ -4,8 +4,16 @@
   tags:
     - always
 
+- name: Install Gateway API CRDs
+  ansible.builtin.import_tasks: gateway_api.yml
+  tags:
+    - gateway_api
+
+- name: Install cert-manager and Porkbun webhook
+  ansible.builtin.import_tasks: cert_manager.yml
+  tags:
+    - cert_manager
+
 # Phases added incrementally (each touches the live cluster):
-#   gateway_api.yml   — Gateway API CRDs (GatewayClass + routes live in gitops repo)
-#   cert_manager.yml  — cert-manager + Porkbun DNS-01 webhook charts
 #   monitoring.yml    — kube-prometheus-stack + Loki + Alloy charts
 #   flux.yml          — Flux + sops-age secret + GitRepository + root Kustomization

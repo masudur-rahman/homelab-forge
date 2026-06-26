@@ -1,12 +1,31 @@
 ---
-- name: Ensure required CLI tools are present on the controller
-  ansible.builtin.command: "which {{ item }}"
-  loop: "{{ k8s_platform_required_bins }}"
+- name: Tap required Homebrew repositories on the controller
+  community.general.homebrew_tap:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ k8s_platform_brew_taps }}"
   loop_control:
     label: "{{ item }}"
-  register: k8s_platform_bin_check
-  changed_when: false
-  failed_when: k8s_platform_bin_check.rc != 0
+  become: false
+
+- name: Ensure required CLI tools are installed on the controller
+  community.general.homebrew:
+    name: "{{ k8s_platform_brew_formulae }}"
+    state: present
+  become: false
+
+- name: Ensure required Python libraries are installed on the controller
+  # Invoked via the interpreter directly, not the pip module: the pip module
+  # imports 'packaging', which is one of the libs we are bootstrapping here.
+  # Homebrew Python is PEP 668 externally-managed, hence --break-system-packages.
+  ansible.builtin.command: >-
+    {{ ansible_facts.discovered_interpreter_python | default('python3') }}
+    -m pip install --break-system-packages {{ k8s_platform_pip_packages | join(' ') }}
+  register: k8s_platform_pip_install
+  changed_when: "'Successfully installed' in k8s_platform_pip_install.stdout"
+  become: false
+  tags:
+    - skip_ansible_lint
 
 - name: Stat the kubeconfig file
   ansible.builtin.stat:

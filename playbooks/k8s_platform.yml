@@ -2,5 +2,8 @@
 - name: Ready the olympus Kubernetes platform
   hosts: k8s
   gather_facts: false
+  # Controller-local play (delegate to localhost + kubeconfig). No privilege
+  # escalation — overrides any become inherited from group_vars.
+  become: false
   roles:
     - k8s_platform
