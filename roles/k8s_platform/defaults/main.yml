@@ -47,6 +47,24 @@ k8s_platform_helm_repos:
     url: https://charts.jetstack.io
   - name: cert-manager-webhook-porkbun
     url: https://talinx.github.io/cert-manager-webhook-porkbun
+  - name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
+  - name: grafana
+    url: https://grafana.github.io/helm-charts
+
+# Helm --wait timeout. kube-prometheus-stack pulls many images on first install;
+# the 5m helm default is too short while PVCs bind and images pull.
+k8s_platform_helm_timeout: "10m0s"
+
+# Persistent storage for stateful platform components (Proxmox CSI default SC).
+k8s_platform_storage_class: proxmox-zfs
+k8s_platform_grafana_pvc_size: 5Gi
+k8s_platform_prometheus_pvc_size: 20Gi
+k8s_platform_alertmanager_pvc_size: 5Gi
+k8s_platform_loki_pvc_size: 10Gi
+
+# In-cluster Loki push endpoint (used by Alloy and the Grafana datasource).
+k8s_platform_loki_url: "http://loki.{{ k8s_platform_logging_namespace }}.svc.cluster.local:3100"
 
 # cert-manager Porkbun DNS-01 webhook solver groupName.
 # Must match the ClusterIssuer webhook solver groupName in the gitops repo

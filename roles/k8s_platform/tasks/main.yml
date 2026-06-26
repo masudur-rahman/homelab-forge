@@ -14,6 +14,10 @@
   tags:
     - cert_manager
 
+- name: Install observability stack
+  ansible.builtin.import_tasks: monitoring.yml
+  tags:
+    - monitoring
+
 # Phases added incrementally (each touches the live cluster):
-#   monitoring.yml    — kube-prometheus-stack + Loki + Alloy charts
 #   flux.yml          — Flux + sops-age secret + GitRepository + root Kustomization

@@ -1,0 +1,184 @@
+---
+# Observability stack: kube-prometheus-stack (metrics + Grafana + Alertmanager)
+# in the monitoring namespace; Loki (logs) + Alloy (log shipper) in the logging
+# namespace. All upstream charts installed as-is. Grafana/Gateway HTTPRoutes are
+# reconciled from the gitops repo; here Grafana is ClusterIP only.
+- name: Add Helm chart repositories
+  kubernetes.core.helm_repository:
+    name: "{{ item.name }}"
+    repo_url: "{{ item.url }}"
+  loop: "{{ k8s_platform_helm_repos }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags:
+    - monitoring
+
+# Talos enforces cluster-wide 'baseline' PodSecurity. node-exporter needs
+# hostNetwork/hostPID/hostPath/hostPort, so the monitoring namespace must be
+# 'privileged' or the node-exporter DaemonSet pods are rejected.
+- name: Ensure the monitoring namespace exists with privileged PodSecurity
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ k8s_platform_monitoring_namespace }}"
+        labels:
+          pod-security.kubernetes.io/enforce: privileged
+          pod-security.kubernetes.io/warn: privileged
+          pod-security.kubernetes.io/audit: privileged
+  tags:
+    - monitoring
+
+- name: Install kube-prometheus-stack
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig }}"
+    name: kube-prometheus-stack
+    chart_ref: prometheus-community/kube-prometheus-stack
+    chart_version: "{{ k8s_platform_kube_prometheus_stack_version }}"
+    release_namespace: "{{ k8s_platform_monitoring_namespace }}"
+    create_namespace: false
+    wait: true
+    timeout: "{{ k8s_platform_helm_timeout }}"
+    values:
+      grafana:
+        adminPassword: "{{ vault_grafana_admin_password }}"
+        persistence:
+          enabled: true
+          storageClassName: "{{ k8s_platform_storage_class }}"
+          size: "{{ k8s_platform_grafana_pvc_size }}"
+        additionalDataSources:
+          - name: Loki
+            type: loki
+            access: proxy
+            url: "{{ k8s_platform_loki_url }}"
+      prometheus:
+        prometheusSpec:
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                storageClassName: "{{ k8s_platform_storage_class }}"
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: "{{ k8s_platform_prometheus_pvc_size }}"
+      alertmanager:
+        alertmanagerSpec:
+          storage:
+            volumeClaimTemplate:
+              spec:
+                storageClassName: "{{ k8s_platform_storage_class }}"
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: "{{ k8s_platform_alertmanager_pvc_size }}"
+  tags:
+    - monitoring
+
+- name: Install Loki (SingleBinary)
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig }}"
+    name: loki
+    chart_ref: grafana/loki
+    chart_version: "{{ k8s_platform_loki_version }}"
+    release_namespace: "{{ k8s_platform_logging_namespace }}"
+    create_namespace: true
+    wait: true
+    timeout: "{{ k8s_platform_helm_timeout }}"
+    values:
+      deploymentMode: SingleBinary
+      loki:
+        auth_enabled: false
+        commonConfig:
+          replication_factor: 1
+        storage:
+          type: filesystem
+        schemaConfig:
+          configs:
+            - from: "2024-04-01"
+              store: tsdb
+              object_store: filesystem
+              schema: v13
+              index:
+                prefix: loki_index_
+                period: 24h
+      singleBinary:
+        replicas: 1
+        persistence:
+          enabled: true
+          storageClass: "{{ k8s_platform_storage_class }}"
+          size: "{{ k8s_platform_loki_pvc_size }}"
+      # Trim components not needed at homelab scale.
+      read:
+        replicas: 0
+      write:
+        replicas: 0
+      backend:
+        replicas: 0
+      chunksCache:
+        enabled: false
+      resultsCache:
+        enabled: false
+      lokiCanary:
+        enabled: false
+      test:
+        enabled: false
+      gateway:
+        enabled: false
+  tags:
+    - monitoring
+
+- name: Install Alloy (log shipper)
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig }}"
+    name: alloy
+    chart_ref: grafana/alloy
+    chart_version: "{{ k8s_platform_alloy_version }}"
+    release_namespace: "{{ k8s_platform_logging_namespace }}"
+    create_namespace: true
+    wait: true
+    timeout: "{{ k8s_platform_helm_timeout }}"
+    values:
+      alloy:
+        configMap:
+          content: |
+            discovery.kubernetes "pod" {
+              role = "pod"
+            }
+
+            discovery.relabel "pod_logs" {
+              targets = discovery.kubernetes.pod.targets
+              rule {
+                source_labels = ["__meta_kubernetes_namespace"]
+                target_label  = "namespace"
+              }
+              rule {
+                source_labels = ["__meta_kubernetes_pod_name"]
+                target_label  = "pod"
+              }
+              rule {
+                source_labels = ["__meta_kubernetes_pod_container_name"]
+                target_label  = "container"
+              }
+              rule {
+                source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+                target_label  = "app"
+              }
+            }
+
+            loki.source.kubernetes "pod_logs" {
+              targets    = discovery.relabel.pod_logs.output
+              forward_to = [loki.write.default.receiver]
+            }
+
+            loki.write "default" {
+              endpoint {
+                url = "{{ k8s_platform_loki_url }}/loki/api/v1/push"
+              }
+            }
+  tags:
+    - monitoring
