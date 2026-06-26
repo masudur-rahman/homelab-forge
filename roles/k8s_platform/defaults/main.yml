@@ -28,9 +28,12 @@ k8s_platform_logging_namespace: logging
 k8s_platform_gateway_namespace: gateway
 k8s_platform_flux_namespace: flux-system
 
-# Pinned third-party chart / CRD versions (installed by Ansible).
+# Gateway API CRDs + the Cilium gateway controller are owned by homelab-genesis.
+# Forge only asserts this GatewayClass exists before reconciling routes.
+k8s_platform_gateway_class: cilium
+
+# Pinned third-party chart versions (installed by Ansible).
 # NOTE: verify/bump these to current releases before applying.
-k8s_platform_gateway_api_version: v1.2.1
 k8s_platform_cert_manager_version: v1.16.2
 k8s_platform_porkbun_webhook_version: "1.0.0"
 k8s_platform_kube_prometheus_stack_version: "67.4.0"
