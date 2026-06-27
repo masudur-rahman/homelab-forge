@@ -1,4 +1,8 @@
 ---
+# Role plumbing / sane baselines. Operator-tunable values (chart versions,
+# storage sizes, helm timeout, Flux git source) live in group_vars/compute.yml;
+# per-chart helm values live in templates/<chart>-values.yaml.j2.
+
 # Required CLI tools on the Ansible controller, installed via Homebrew (macOS).
 # Taps needed before the tapped formulae below can be installed.
 k8s_platform_brew_taps:
@@ -32,53 +36,28 @@ k8s_platform_flux_namespace: flux-system
 # Forge only asserts this GatewayClass exists before reconciling routes.
 k8s_platform_gateway_class: cilium
 
-# Pinned third-party chart versions (installed by Ansible).
-# NOTE: verify/bump these to current releases before applying.
-k8s_platform_cert_manager_version: v1.16.2
-k8s_platform_porkbun_webhook_version: "1.0.0"
-k8s_platform_kube_prometheus_stack_version: "67.4.0"
-k8s_platform_loki_version: "6.24.0"
-k8s_platform_alloy_version: "0.10.1"
-# Pinned to flux app v2.6.x: the cluster is k8s 1.32.3 and flux >=2.8 requires
-# k8s >=1.33 (its pre-install flux-check fails otherwise). Bump when k8s upgrades.
-k8s_platform_flux_chart_version: "2.16.4"
-
-# Helm chart repositories (third-party charts installed as-is by Ansible)
-k8s_platform_helm_repos:
+# Helm chart repositories, grouped per phase so a tag-scoped run
+# (e.g. --tags monitoring) only registers the repos that phase needs.
+k8s_platform_cert_manager_helm_repos:
   - name: jetstack
     url: https://charts.jetstack.io
   - name: cert-manager-webhook-porkbun
     url: https://talinx.github.io/cert-manager-webhook-porkbun
+
+k8s_platform_monitoring_helm_repos:
   - name: prometheus-community
     url: https://prometheus-community.github.io/helm-charts
   - name: grafana
     url: https://grafana.github.io/helm-charts
+
+k8s_platform_flux_helm_repos:
   - name: fluxcd-community
     url: https://fluxcd-community.github.io/helm-charts
-
-# Helm --wait timeout. kube-prometheus-stack pulls many images on first install;
-# the 5m helm default is too short while PVCs bind and images pull.
-k8s_platform_helm_timeout: "10m0s"
-
-# Persistent storage for stateful platform components (Proxmox CSI default SC).
-k8s_platform_storage_class: proxmox-zfs
-k8s_platform_grafana_pvc_size: 5Gi
-k8s_platform_prometheus_pvc_size: 20Gi
-k8s_platform_alertmanager_pvc_size: 5Gi
-k8s_platform_loki_pvc_size: 10Gi
-
-# In-cluster Loki push endpoint (used by Alloy and the Grafana datasource).
-k8s_platform_loki_url: "http://loki.{{ k8s_platform_logging_namespace }}.svc.cluster.local:3100"
 
 # cert-manager Porkbun DNS-01 webhook solver groupName.
 # Must match the ClusterIssuer webhook solver groupName in the gitops repo
 # (clusters/olympus/infrastructure/cluster-issuer.yaml).
 k8s_platform_porkbun_webhook_group_name: porkbun.talinx.dev
 
-# GitOps source — personal/modified manifests live in the helm-charts repo
-# (monorepo for now). Flux reconciles the path below.
-k8s_platform_flux_git_url: https://github.com/masudur-rahman/helm-charts
-k8s_platform_flux_git_branch: main
-k8s_platform_flux_git_path: ./clusters/olympus
-k8s_platform_flux_git_interval: 5m
-k8s_platform_flux_sync_interval: 10m
+# In-cluster Loki push endpoint (used by Alloy and the Grafana datasource).
+k8s_platform_loki_url: "http://loki.{{ k8s_platform_logging_namespace }}.svc.cluster.local:3100"

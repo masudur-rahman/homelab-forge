@@ -7,7 +7,7 @@
   kubernetes.core.helm_repository:
     name: "{{ item.name }}"
     repo_url: "{{ item.url }}"
-  loop: "{{ k8s_platform_helm_repos }}"
+  loop: "{{ k8s_platform_flux_helm_repos }}"
   loop_control:
     label: "{{ item.name }}"
   tags:

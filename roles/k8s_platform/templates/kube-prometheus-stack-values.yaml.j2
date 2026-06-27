@@ -1,0 +1,35 @@
+# Helm values for prometheus-community/kube-prometheus-stack.
+# Tune Grafana/Prometheus/Alertmanager persistence and datasources here.
+grafana:
+  adminPassword: "{{ vault_grafana_admin_password }}"
+  persistence:
+    enabled: true
+    storageClassName: "{{ k8s_platform_storage_class }}"
+    size: "{{ k8s_platform_grafana_pvc_size }}"
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: "{{ k8s_platform_loki_url }}"
+prometheus:
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: "{{ k8s_platform_storage_class }}"
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: "{{ k8s_platform_prometheus_pvc_size }}"
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: "{{ k8s_platform_storage_class }}"
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: "{{ k8s_platform_alertmanager_pvc_size }}"

@@ -5,7 +5,7 @@
   kubernetes.core.helm_repository:
     name: "{{ item.name }}"
     repo_url: "{{ item.url }}"
-  loop: "{{ k8s_platform_helm_repos }}"
+  loop: "{{ k8s_platform_cert_manager_helm_repos }}"
   loop_control:
     label: "{{ item.name }}"
   tags:
@@ -20,9 +20,7 @@
     release_namespace: "{{ k8s_platform_cert_manager_namespace }}"
     create_namespace: true
     wait: true
-    values:
-      crds:
-        enabled: true
+    values: "{{ lookup('template', 'cert-manager-values.yaml.j2') | from_yaml }}"
   tags:
     - cert_manager
 
@@ -34,10 +32,6 @@
     chart_version: "{{ k8s_platform_porkbun_webhook_version }}"
     release_namespace: "{{ k8s_platform_cert_manager_namespace }}"
     wait: true
-    values:
-      groupName: "{{ k8s_platform_porkbun_webhook_group_name }}"
-      certManager:
-        namespace: "{{ k8s_platform_cert_manager_namespace }}"
-        serviceAccountName: cert-manager
+    values: "{{ lookup('template', 'cert-manager-webhook-porkbun-values.yaml.j2') | from_yaml }}"
   tags:
     - cert_manager

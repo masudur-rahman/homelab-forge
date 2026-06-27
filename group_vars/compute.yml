@@ -15,6 +15,36 @@ monitoring_admin_user: admin
 porkbun_api_key: "{{ vault_porkbun_api_key }}"
 porkbun_secret_key: "{{ vault_porkbun_secret_key }}"
 
+# ── K8s platform (olympus cluster) — operator control surface ─────────────────
+# Pinned third-party chart versions. Verify/bump before applying.
+k8s_platform_cert_manager_version: v1.16.2
+k8s_platform_porkbun_webhook_version: "1.0.0"
+k8s_platform_kube_prometheus_stack_version: "67.4.0"
+k8s_platform_loki_version: "6.24.0"
+k8s_platform_alloy_version: "0.10.1"
+# flux app v2.6.x: cluster is k8s 1.32.3 and flux >=2.8 requires k8s >=1.33
+# (its pre-install flux-check fails otherwise). Bump when k8s upgrades.
+k8s_platform_flux_chart_version: "2.16.4"
+
+# Helm --wait timeout. kube-prometheus-stack pulls many images on first install;
+# the 5m helm default is too short while PVCs bind and images pull.
+k8s_platform_helm_timeout: "10m0s"
+
+# Persistent storage for stateful platform components (Proxmox CSI default SC).
+k8s_platform_storage_class: proxmox-zfs
+k8s_platform_grafana_pvc_size: 5Gi
+k8s_platform_prometheus_pvc_size: 20Gi
+k8s_platform_alertmanager_pvc_size: 5Gi
+k8s_platform_loki_pvc_size: 10Gi
+
+# GitOps source — personal/modified manifests live in the helm-charts repo.
+# Flux reconciles the path below for the olympus cluster.
+k8s_platform_flux_git_url: https://github.com/masudur-rahman/helm-charts
+k8s_platform_flux_git_branch: main
+k8s_platform_flux_git_path: ./clusters/olympus
+k8s_platform_flux_git_interval: 5m
+k8s_platform_flux_sync_interval: 10m
+
 # Expense Tracker Bot Config
 expense_bot_version: "v1.5.0-alpha.1-chromedp"
 expense_bot_token: "{{ vault_expense_bot_token }}"

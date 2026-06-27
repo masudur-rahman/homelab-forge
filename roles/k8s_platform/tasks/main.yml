@@ -4,7 +4,7 @@
   tags:
     - always
 
-- name: Install Gateway API CRDs
+- name: Assert Gateway API platform readiness
   ansible.builtin.import_tasks: gateway_api.yml
   tags:
     - gateway_api

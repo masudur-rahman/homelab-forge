@@ -1,0 +1,6 @@
+# Helm values for the Porkbun DNS-01 webhook solver.
+# groupName must match the ClusterIssuer solver groupName in the gitops repo.
+groupName: "{{ k8s_platform_porkbun_webhook_group_name }}"
+certManager:
+  namespace: "{{ k8s_platform_cert_manager_namespace }}"
+  serviceAccountName: cert-manager
