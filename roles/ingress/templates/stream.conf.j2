@@ -1,0 +1,32 @@
+# Ansible Managed: TLS passthrough (SNI-based routing)
+# Path: /etc/nginx/streams.d/tls-passthrough.conf
+
+# Route by TLS SNI without decrypting. Cluster hosts pass through to the
+# Gateway (TLS terminates there); everything else goes to the local http{}
+# listener that terminates TLS on this host.
+map $ssl_preread_server_name $tls_backend {
+{% for host in ingress_passthrough_hosts %}
+    {{ host }}  cluster_gateway;
+{% endfor %}
+    default  local_https;
+}
+
+upstream cluster_gateway {
+    server {{ ingress_cluster_gateway_ip }}:{{ ingress_cluster_gateway_port }};
+}
+
+upstream local_https {
+    server 127.0.0.1:{{ ingress_local_https_port }};
+}
+
+server {
+    listen 443 reuseport;
+    listen [::]:443 reuseport;
+    proxy_pass $tls_backend;
+    ssl_preread on;
+{% if ingress_proxy_protocol %}
+    # NOTE: applies to BOTH upstreams. Only enable when the Cilium Gateway
+    # listener also accepts PROXY protocol, otherwise cluster TLS breaks.
+    proxy_protocol on;
+{% endif %}
+}

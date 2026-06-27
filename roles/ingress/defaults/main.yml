@@ -6,5 +6,20 @@ ingress_sites: []
 #   upstream: "http://10.0.0.5:8080"
 #   websocket: false
 
+# ── TLS passthrough (SNI-based) to the k8s cluster Gateway ──
+# nginx reads the TLS SNI without decrypting and forwards matching hosts to the
+# cluster Gateway, where cert-manager terminates TLS. Everything else is
+# terminated locally on this nginx.
+ingress_cluster_gateway_ip: "{{ ips.k8s_gateway }}"
+ingress_cluster_gateway_port: 443
+# SNI hostnames routed (passthrough) to the cluster Gateway.
+ingress_passthrough_hosts: []
+# Local loopback port where the http{} servers terminate TLS behind the stream proxy.
+ingress_local_https_port: 8443
+# PROXY protocol toward upstreams. Off by default. Enabling preserves the real
+# client IP for infra AND cluster apps, but requires the Cilium Gateway listener
+# to also accept PROXY protocol (cluster-side change) — otherwise cluster TLS breaks.
+ingress_proxy_protocol: false
+
 # porkbun_api_key: ""
 # porkbun_secret_key: ""

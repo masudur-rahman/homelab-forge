@@ -1,9 +1,35 @@
 ---
+- name: Install Nginx Stream Module
+  ansible.builtin.apt:
+    name: libnginx-mod-stream
+    state: present
+    update_cache: true
+
 - name: Ensure Nginx Configuration Directory Exists
   ansible.builtin.file:
-    path: /etc/nginx/conf.d
+    path: "{{ item }}"
     state: directory
     mode: '0755'
+  loop:
+    - /etc/nginx/conf.d
+    - /etc/nginx/streams.d
+
+- name: Enable Stream Block Include In nginx.conf
+  ansible.builtin.blockinfile:
+    path: /etc/nginx/nginx.conf
+    marker: "# {mark} ANSIBLE MANAGED: stream include"
+    block: |
+      stream {
+          include /etc/nginx/streams.d/*.conf;
+      }
+  notify: Reload Nginx
+
+- name: Upload TLS Passthrough Stream Configuration
+  ansible.builtin.template:
+    src: stream.conf.j2
+    dest: /etc/nginx/streams.d/tls-passthrough.conf
+    mode: '0644'
+  notify: Reload Nginx
 
 - name: Upload Domain Configurations
   ansible.builtin.template:

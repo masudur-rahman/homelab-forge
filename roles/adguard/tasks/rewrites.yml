@@ -3,6 +3,9 @@
   ansible.builtin.set_fact:
     adguard_desired_rewrites: >-
       {{ (ingress_sites | default([]) | map('combine', {'answer': ips.portal}) | list)
+         + (ingress_passthrough_hosts | default([])
+            | map('community.general.dict_kv', 'domain')
+            | map('combine', {'answer': ips.portal}) | list)
          + (adguard_extra_rewrites | default([]) | list) }}
   run_once: true
 

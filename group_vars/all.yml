@@ -19,6 +19,7 @@ ips:
   router: "10.66.0.1"
   adguard: "10.66.0.253"
   proxmox: "10.66.0.10"
+  k8s_gateway: "10.66.0.150"  # Cilium Gateway LoadBalancer VIP (olympus)
   # Inventory hosts (resolved lazily; only available in their own env)
   gateway_01: "{{ hostvars['gateway-01'].ansible_host | default('') }}"
   gateway_02: "{{ hostvars['gateway-02'].ansible_host | default('') }}"
@@ -60,6 +61,14 @@ ingress_sites:
   - domain: "family.mrahman.xyz"
     upstream: "http://{{ ips.expense_tracker}}:5294"
     websocket: false
+
+# Cluster apps served by the k8s Gateway. Internally they resolve straight to
+# the Gateway VIP (ips.k8s_gateway) via DNS rewrite; the nginx stream block uses
+# this same list to SNI-passthrough external traffic to the Gateway (no local cert).
+ingress_passthrough_hosts:
+  - grafana.mrahman.xyz
+  - hubble.mrahman.xyz
+  - pawsitively.mrahman.xyz
 
 # Cleanup settings (used by cleanup tasks with tags: [never, cleanup])
 cleanup_prune_volumes: true
