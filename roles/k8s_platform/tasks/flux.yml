@@ -1,0 +1,87 @@
+---
+# Flux GitOps. Thin bootstrap: install the controllers, seed the SOPS age
+# decryption key, then point Flux at the helm-charts repo. Flux reconciles the
+# olympus tree (Gateway, ClusterIssuer, Certificate, HTTPRoutes) and decrypts
+# the SOPS-encrypted Porkbun credentials with the sops-age secret.
+- name: Add Helm chart repositories
+  kubernetes.core.helm_repository:
+    name: "{{ item.name }}"
+    repo_url: "{{ item.url }}"
+  loop: "{{ k8s_platform_helm_repos }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags:
+    - flux
+
+- name: Install Flux controllers
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig }}"
+    name: flux2
+    chart_ref: fluxcd-community/flux2
+    chart_version: "{{ k8s_platform_flux_chart_version }}"
+    release_namespace: "{{ k8s_platform_flux_namespace }}"
+    create_namespace: true
+    wait: true
+    timeout: "{{ k8s_platform_helm_timeout }}"
+  tags:
+    - flux
+
+- name: Create the SOPS age decryption secret for Flux
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: sops-age
+        namespace: "{{ k8s_platform_flux_namespace }}"
+      stringData:
+        # Flux looks for keys ending in '.agekey'.
+        age.agekey: "{{ vault_olympus_age_key }}"
+  no_log: true
+  tags:
+    - flux
+
+- name: Create the Flux GitRepository source
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present
+    definition:
+      apiVersion: source.toolkit.fluxcd.io/v1
+      kind: GitRepository
+      metadata:
+        name: helm-charts
+        namespace: "{{ k8s_platform_flux_namespace }}"
+      spec:
+        interval: "{{ k8s_platform_flux_git_interval }}"
+        url: "{{ k8s_platform_flux_git_url }}"
+        ref:
+          branch: "{{ k8s_platform_flux_git_branch }}"
+  tags:
+    - flux
+
+- name: Create the Flux Kustomization
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present
+    definition:
+      apiVersion: kustomize.toolkit.fluxcd.io/v1
+      kind: Kustomization
+      metadata:
+        name: olympus
+        namespace: "{{ k8s_platform_flux_namespace }}"
+      spec:
+        interval: "{{ k8s_platform_flux_sync_interval }}"
+        sourceRef:
+          kind: GitRepository
+          name: helm-charts
+        path: "{{ k8s_platform_flux_git_path }}"
+        prune: true
+        wait: true
+        decryption:
+          provider: sops
+          secretRef:
+            name: sops-age
+  tags:
+    - flux

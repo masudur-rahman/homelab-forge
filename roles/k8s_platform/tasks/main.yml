@@ -19,5 +19,7 @@
   tags:
     - monitoring
 
-# Phases added incrementally (each touches the live cluster):
-#   flux.yml          — Flux + sops-age secret + GitRepository + root Kustomization
+- name: Bootstrap Flux GitOps
+  ansible.builtin.import_tasks: flux.yml
+  tags:
+    - flux

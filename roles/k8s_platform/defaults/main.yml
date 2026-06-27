@@ -39,7 +39,9 @@ k8s_platform_porkbun_webhook_version: "1.0.0"
 k8s_platform_kube_prometheus_stack_version: "67.4.0"
 k8s_platform_loki_version: "6.24.0"
 k8s_platform_alloy_version: "0.10.1"
-k8s_platform_flux_version: "2.14.1"
+# Pinned to flux app v2.6.x: the cluster is k8s 1.32.3 and flux >=2.8 requires
+# k8s >=1.33 (its pre-install flux-check fails otherwise). Bump when k8s upgrades.
+k8s_platform_flux_chart_version: "2.16.4"
 
 # Helm chart repositories (third-party charts installed as-is by Ansible)
 k8s_platform_helm_repos:
@@ -51,6 +53,8 @@ k8s_platform_helm_repos:
     url: https://prometheus-community.github.io/helm-charts
   - name: grafana
     url: https://grafana.github.io/helm-charts
+  - name: fluxcd-community
+    url: https://fluxcd-community.github.io/helm-charts
 
 # Helm --wait timeout. kube-prometheus-stack pulls many images on first install;
 # the 5m helm default is too short while PVCs bind and images pull.
@@ -76,3 +80,5 @@ k8s_platform_porkbun_webhook_group_name: porkbun.talinx.dev
 k8s_platform_flux_git_url: https://github.com/masudur-rahman/helm-charts
 k8s_platform_flux_git_branch: main
 k8s_platform_flux_git_path: ./clusters/olympus
+k8s_platform_flux_git_interval: 5m
+k8s_platform_flux_sync_interval: 10m
