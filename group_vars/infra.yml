@@ -36,3 +36,6 @@ adguard_admin_password: "{{ vault_adguard_admin_password | default('') }}"
 adguard_extra_rewrites:
   - { domain: data.mrahman.xyz, answer: "{{ ips.data }}" }
   - { domain: cache.mrahman.xyz, answer: "{{ ips.data }}" }
+  # Override the *.mrahman.xyz wildcard so the Helm chart repo resolves to
+  # GitHub Pages (custom domain) instead of the homelab nginx.
+  - { domain: charts.mrahman.xyz, answer: masudur-rahman.github.io }
