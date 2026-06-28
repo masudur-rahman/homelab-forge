@@ -1,4 +1,9 @@
 ---
+# Locale settings
+configure_host_locales:
+  - en_US.UTF-8
+configure_host_default_locale: en_US.UTF-8
+
 # Disk resize settings
 configure_host_resize_disk_device: sda
 configure_host_resize_disk_partition: 1

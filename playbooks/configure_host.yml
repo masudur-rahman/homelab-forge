@@ -1,6 +1,6 @@
 ---
 - name: Configure Infra Layer Base
-  hosts: all
+  hosts: all:!talos_nodes:!k8s
   become: true
   roles:
     - role: configure_host

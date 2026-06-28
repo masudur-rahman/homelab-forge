@@ -58,9 +58,6 @@ ingress_sites:
   - domain: "expense-api.mrahman.xyz"
     upstream: "http://{{ ips.expense_tracker}}:6336"
     websocket: false
-  - domain: "family.mrahman.xyz"
-    upstream: "http://{{ ips.expense_tracker}}:5294"
-    websocket: false
 
 # Cluster apps served by the k8s Gateway. Internally they resolve straight to
 # the Gateway VIP (ips.k8s_gateway) via DNS rewrite; the nginx stream block uses
@@ -69,6 +66,7 @@ ingress_passthrough_hosts:
   - grafana.mrahman.xyz
   - hubble.mrahman.xyz
   - pawsitively.mrahman.xyz
+  - family.mrahman.xyz
 
 # Cleanup settings (used by cleanup tasks with tags: [never, cleanup])
 cleanup_prune_volumes: true

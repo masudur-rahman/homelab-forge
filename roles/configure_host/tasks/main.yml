@@ -4,6 +4,11 @@
   tags:
     - system
 
+- name: Configure Locale
+  ansible.builtin.include_tasks: locale.yml
+  tags:
+    - locale
+
 - name: Configure DNS
   ansible.builtin.include_tasks: dns.yml
   when: "'gateway' not in group_names"
