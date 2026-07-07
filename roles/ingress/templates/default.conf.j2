@@ -1,0 +1,23 @@
+# Ansible Managed: catch-all default server
+# Path: /etc/nginx/conf.d/00-default.conf
+#
+# Rejects any request whose Host/SNI does not match a configured server_name
+# (e.g. raw public-IP access). Without this, an unmatched request falls through
+# to the first-loaded server block, unintentionally exposing infra apps.
+
+server {
+    listen 80 default_server;
+    server_name _;
+    return 444;
+}
+
+server {
+    listen 127.0.0.1:{{ ingress_local_https_port }} ssl default_server{% if ingress_proxy_protocol %} proxy_protocol{% endif %};
+    server_name _;
+
+    ssl_certificate /etc/nginx/ssl/{{ ingress_root_domain }}/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/{{ ingress_root_domain }}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    return 444;
+}

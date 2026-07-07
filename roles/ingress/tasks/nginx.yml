@@ -29,6 +29,10 @@
     src: stream.conf.j2
     dest: /etc/nginx/streams.d/tls-passthrough.conf
     mode: '0644'
+  loop: "{{ ingress_passthrough_hosts }}"
+  loop_control:
+    loop_var: passthrough_host
+    label: "{{ passthrough_host }}"
   notify: Reload Nginx
 
 - name: Upload Domain Configurations
@@ -39,6 +43,37 @@
   loop: "{{ ingress_sites }}"
   loop_control:
     loop_var: server
+  notify: Reload Nginx
+
+- name: Remove Distro Default Site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload Nginx
+
+- name: Upload Catch-all Default Configuration
+  ansible.builtin.template:
+    src: default.conf.j2
+    dest: /etc/nginx/conf.d/00-default.conf
+    mode: '0644'
+  notify: Reload Nginx
+
+- name: Find Managed Domain Configurations
+  ansible.builtin.find:
+    paths: /etc/nginx/conf.d
+    patterns: "*.{{ ingress_root_domain }}.conf"
+  register: ingress_existing_domain_confs
+
+- name: Remove Stale Domain Configurations
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ ingress_existing_domain_confs.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when: >-
+    (item.path | basename | regex_replace('\.conf$', ''))
+    not in (ingress_sites | map(attribute='domain') | list)
   notify: Reload Nginx
 
 - name: Validate Nginx Configuration
