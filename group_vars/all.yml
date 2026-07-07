@@ -52,10 +52,10 @@ ingress_sites:
   - domain: "netdata.mrahman.xyz"
     upstream: "http://{{ ips.monitoring }}:19999"
     websocket: false
-  - domain: "expense.mrahman.xyz"
+  - domain: "khorcha-pati.mrahman.xyz"
     upstream: "http://{{ ips.expense_tracker}}:65262"
     websocket: false
-  - domain: "expense-api.mrahman.xyz"
+  - domain: "khorcha-pati-api.mrahman.xyz"
     upstream: "http://{{ ips.expense_tracker}}:6336"
     websocket: false
 

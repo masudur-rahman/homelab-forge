@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/masudur-rahman/expense-tracker-bot:{{ expense_bot_version }}
+    image: ghcr.io/masudur-rahman/khorcha-pati:{{ expense_bot_version }}
     container_name: expense-tracker
     command: serve
     restart: unless-stopped
@@ -9,13 +9,14 @@ services:
     environment:
       - TELEGRAM_BOT_TOKEN={{ expense_bot_token }}
       - OPENROUTER_API_KEY={{ expense_bot_openrouter_key }}
+      - GEMINI_API_KEY={{ expense_bot_gemini_key }}
 
     volumes:
-      - /opt/expense-tracker/backend-config.yaml:/app/.configs/.expense-tracker.yaml
-      - ./app_data:/app/.expense-tracker
+      - /opt/expense-tracker/backend-config.yaml:/app/.configs/.khorcha-pati.yaml
+      - ./app_data:/app/.khorcha-pati
 
   web:
-    image: ghcr.io/masudur-rahman/expense-tracker-bot-web:{{ expense_dashboard_version }}
+    image: ghcr.io/masudur-rahman/khorcha-pati-web:{{ expense_dashboard_version }}
     container_name: expense-tracker-web
     restart: unless-stopped
     ports:
